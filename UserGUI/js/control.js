@@ -50,7 +50,7 @@ function configurePort(portId, type){
 		return;
 	}
 	
-	configDev("set/" + code)
+	configDevProtected("set/" + code)
 }
 
 /******************************************************
@@ -218,16 +218,8 @@ function createCORSRequest(method, url) {
 function configDevProtected(sufix){
 	var ipAddr = document.getElementById("ipAddress").value;
 	var url = "/" + sufix;
-	if (document.domain != ipAddr){
-		window.alert("This functionality is only available for the local user!");
-		return;
-	}
-
-	var responseText = null;
-	
-	// Check if IP address is valid
-	if (!validateIPv4(ipAddr)){
-		window.alert('IP Address not valid!');
+	if (document.domain != document.getElementById("setNewIp").value){
+		window.alert("This functionality is only available for computers inside server network! (Address: '"+document.getElementById("setNewIp").value+"')");
 		return;
 	}
 	
@@ -290,7 +282,8 @@ function configDev(sufix){
 		window.alert("The refresh time must be numeric!");
 		return;
 	}
-		
+	
+	clearInterval(timer);
 	timer = setInterval(function () { readValues();},refreshTime*1000);
 	readValues()
 }
@@ -370,7 +363,7 @@ function nextDiscover (){
 		if (status == "arduino"){
 			label = "<span class=\"label " + "label-success"+"\">"+"Online Arduino"+"</span>";
 		} else if (status == "server"){
-			label = "<span class=\"label " + "label-warning"+"\">"+"Other Machine"+"</span>";
+			label = "<span class=\"label " + "label-warning"+"\">"+"Other Device"+"</span>";
 		} else if (status == "aborted" && document.getElementById("showOffline").checked == true){
 			label = "<span class=\"label " + "label-danger"+"\">"+"Aborted Request!"+"</span>";
 		} else if (document.getElementById("showOffline").checked == true) {
@@ -496,15 +489,19 @@ function ping(ip, callback) {
 	switch(config.ip){
 		case "1":
 			document.getElementById("setNewIp").innerHTML = "192.168.10.130 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "192.168.10.130";
 			break;
 		case "2":
 			document.getElementById("setNewIp").innerHTML = "10.10.0.2 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "10.10.0.2";
 			break;
 		case "3":
 			document.getElementById("setNewIp").innerHTML = "10.10.68.130 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "10.10.68.130";
 			break;
 		default:
 			document.getElementById("setNewIp").innerHTML = "192.168.10.2 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "192.168.10.2";
 			break;
 	}
 	

@@ -1,7 +1,24 @@
-HTTP/1.1 200 OK
-Content-Type: application/x-javascript
-Connection: close
-
+/******************************************************
+ *                   INITIALIZE FORM                  *
+ ******************************************************/
+if (document.domain != ""){
+	document.getElementById("ipAddress").value = document.domain;
+	document.getElementById("ipAddress2").value = document.domain;
+	setTimeout(function(){
+		configDev("config");
+	}, 1000);
+} else {
+	document.getElementById("ipAddress").value = "147.83.118.42";
+	document.getElementById("ipAddress2").value = "147.83.118.42";
+	var intIP = convertIPv4FromString(location.host);
+	intIP[3] = 1;
+	document.getElementById("startIP").value = convertIPv4FromIntArray(intIP);
+	intIP[3] = 255;
+	document.getElementById("endIP").value = convertIPv4FromIntArray(intIP);
+	setTimeout(function(){
+		configDev("config");
+	}, 1000);
+}
 /******************************************************
  *              CONFIGURE Arduino Port                *
  ******************************************************/
@@ -21,7 +38,7 @@ function configurePort(portId, type){
 		code += "r";
 	} else if (type=="Temperature"){
 		code += "t";
-	} else if (type=="Potenciometer"){
+	} else if (type=="Potentiometer"){
 		code += "p";
 	} else if (type=="Light"){
 		code += "l";
@@ -33,37 +50,50 @@ function configurePort(portId, type){
 		return;
 	}
 	
-	updatePorts("set/" + code)
+	configDev("set/" + code)
 }
 
 /******************************************************
  *              CONFIGURE Device Port                 *
  ******************************************************/
 function configDevice(id, type) {    
-    document.getElementById(id).innerHTML = type + " <span class='caret'></span>";
-	document.getElementById(id).setAttribute("Value", type);
-	if (type=="Empty"){
+	if (type=="e"){
 		document.getElementById(id).setAttribute("class", "btn btn-default dropdown-toggle");
-	}else if (type=="Logical")
-		document.getElementById(id).setAttribute("class", "btn btn-primary dropdown-toggle");
-	else if (type=="PWM")
-		document.getElementById(id).setAttribute("class", "btn btn-success dropdown-toggle");
-	else if (type=="Raw")
+		document.getElementById(id).setAttribute("Value", "Empty");
+		document.getElementById(id).innerHTML = "Empty" + " <span class='caret'></span>";
+	}else if (type=="r"){
 		document.getElementById(id).setAttribute("class", "btn btn-info dropdown-toggle");
-	else if (type=="Temperature")
-		document.getElementById(id).setAttribute("class", "btn btn-danger dropdown-toggle");
-	else if (type=="Potenciometer")
+		document.getElementById(id).setAttribute("Value", "Raw");
+		document.getElementById(id).innerHTML = "Raw" + " <span class='caret'></span>";
+	}else if (type=="w"){
 		document.getElementById(id).setAttribute("class", "btn btn-success dropdown-toggle");
-	else if (type=="Light")
+		document.getElementById(id).setAttribute("Value", "PWM");
+		document.getElementById(id).innerHTML = "PWM" + " <span class='caret'></span>";
+	}else if (type=="p"){
+		document.getElementById(id).setAttribute("class", "btn btn-success dropdown-toggle");
+		document.getElementById(id).setAttribute("Value", "Potentiometer");
+		document.getElementById(id).innerHTML = "Potentiometer" + " <span class='caret'></span>";
+	}else if (type=="l"){
 		document.getElementById(id).setAttribute("class", "btn btn-warning dropdown-toggle");
-	else 
+		document.getElementById(id).setAttribute("Value", "Light");
+		document.getElementById(id).innerHTML = "Light" + " <span class='caret'></span>";
+	}else if (type=="t"){
+		document.getElementById(id).setAttribute("class", "btn btn-danger dropdown-toggle");
+		document.getElementById(id).setAttribute("Value", "Temperature");
+		document.getElementById(id).innerHTML = "Temperature" + " <span class='caret'></span>";
+	}else if (type=="b"){
+		document.getElementById(id).setAttribute("class", "btn btn-primary dropdown-toggle");
+		document.getElementById(id).setAttribute("Value", "Logical");
+		document.getElementById(id).innerHTML = "Logical" + " <span class='caret'></span>";
+	}else {
 		document.getElementById(id).setAttribute("class", "btn btn-default dropdown-toggle");
-
+		document.getElementById(id).setAttribute("Value", "ERROR!");
+		document.getElementById(id).innerHTML = "Error" + " <span class='caret'></span>";
+	}
 }
 /******************************************************
- *                    IPv4 Functions                  *
+ *                     COMPARE IPv4                   *
  ******************************************************/
-/* Compare IPv4 Addresses */
 function compareIPv4 (ip1Int, ip2Int){
 	for (var i=0; i<4; i++){
 		if (ip1Int[i]>ip2Int[i]){
@@ -103,7 +133,37 @@ function convertIPv4FromString (ipIn) {
 	return ipOut;
 }
 
-/* Validate IPv4 */
+/******************************************************
+ *        CONVERT INT ARRAY TO IPv4 STRING            *
+ ******************************************************/
+function convertIPv4FromIntArray (ipIn) {
+	return ipIn[0] + "." + ipIn[1] + "." +  ipIn[2] + "." + ipIn[3];
+}
+
+/******************************************************
+ *             ADD ONE TO THE IPv4 ADDR               *
+ ******************************************************/
+function addOneIPv4(ipIn){
+	var intIp = convertIPv4FromString(ipIn);
+	intIp[3]++;
+	if (intIp[3] == 256){
+		intIp[3] = 0;
+		intIp[2] ++;
+		if (intIp[2] == 256){
+			intIp[2] = 0;
+			intIp[2] ++;
+			if (intIp[1] == 256){
+				intIp[1] = 0;
+				intIp[0] ++;
+			}
+		}
+	}
+	return convertIPv4FromIntArray(intIp);
+}
+
+/******************************************************
+ *                VALIDATE IPv4 ADDRESS               *
+ ******************************************************/
 function validateIPv4(addr){
 	var res = addr.split(".");
 	var len = res.length;
@@ -124,31 +184,45 @@ function validateIPv4(addr){
  ******************************************************/
 /* Create Cross domain petition */
 function createCORSRequest(method, url) {
-  var xhr = new XMLHttpRequest();
-  if ("withCredentials" in xhr) {
-    // Check if the XMLHttpRequest object has a "withCredentials" property.
-    // "withCredentials" only exists on XMLHTTPRequest2 objects.
-    xhr.open(method, url, true);
-  } else if (typeof XDomainRequest != "undefined") {
-    // Otherwise, check if XDomainRequest.
-    // XDomainRequest only exists in IE, and is IE's way of making CORS requests.
-    xhr = new XDomainRequest();
-    xhr.open(method, url);
+	var xhr = new XMLHttpRequest();
+	if ("withCredentials" in xhr) {
+		// Check if the XMLHttpRequest object has a "withCredentials" property.
+		// "withCredentials" only exists on XMLHTTPRequest2 objects.
+		xhr.open(method, url, true);
+	} else if (typeof XDomainRequest != "undefined") {
+		// Otherwise, check if XDomainRequest.
+		// XDomainRequest only exists in IE, and is IE's way of making CORS requests.
+		xhr = new XDomainRequest();
+		xhr.open(method, url);
+	} else {
+		// Otherwise, CORS is not supported by the browser.
+		xhr = null;
+	}
+	xhr.timeout = 1000;
+	xhr.onerror = function(e) {
+		stopAutoRead();
+		window.alert("The IP address does not point to a valid Server\nURL:'"+url+"'\n" + e);
+	};
 
-  } else {
-    // Otherwise, CORS is not supported by the browser.
-    xhr = null;
-
-  }
+	xhr.ontimeout = function() {
+		stopAutoRead();
+		window.alert("The IP address is unreachable.\nURL:'"+url+"'");
+	};
+  
   return xhr;
 }
 
 /******************************************************
- *                     UPDATE Ports                   *
+ *          Configure device in same domain           *
  ******************************************************/
-function updatePorts(sufix){
+function configDevProtected(sufix){
 	var ipAddr = document.getElementById("ipAddress").value;
-	var url = "http:/"+ipAddr+":80/" + sufix;
+	var url = "/" + sufix;
+	if (document.domain != ipAddr){
+		window.alert("This functionality is only available for the local user!");
+		return;
+	}
+
 	var responseText = null;
 	
 	// Check if IP address is valid
@@ -166,22 +240,41 @@ function updatePorts(sufix){
 	
 	// Response handlers
 	xhr.onload = function() {
-		var text = xhr.responseText;
-		var config = JSON.parse(xhr.responseText);
-		for (var i = 0; i<6; i++){
-			var port = config[i].in;
-			var type = config[i].type;
-			configDevice("an" + port, type)
-		}
-		for (var i = 6; i<12; i++){
-			var port = config[i].out;
-			var type = config[i].type;
-			configDevice("out" + port, type)
-		}
+		showConfig (xhr.responseText);
 	};
 
-	xhr.onerror = function() {
-		window.alert("Woops, there was an error making the request.\nURL:'"+url+"'");
+	xhr.send();
+}
+
+/******************************************************
+ *           UPDATE Ports (for X-Domain)              *
+ ******************************************************/
+function configDev(sufix){
+	var ipAddr = document.getElementById("ipAddress").value;
+	var url;
+	if (document.domain != ipAddr){
+		url = "http://"+ipAddr+":80/" + sufix;
+	} else {
+		url = "/" + sufix;
+	}
+	var responseText = null;
+	
+	// Check if IP address is valid
+	if (!validateIPv4(ipAddr)){
+		window.alert('IP Address not valid!');
+		return;
+	}
+	
+	// Create request and check if the navigation browser is valid
+	var xhr = createCORSRequest('GET', url);
+	if (!xhr) {
+		window.alert('CORS not supported');
+		return;
+	}
+	
+	// Response handlers
+	xhr.onload = function() {
+		showConfig (xhr.responseText);
 	};
 
 	xhr.send();
@@ -201,102 +294,20 @@ function updatePorts(sufix){
 	timer = setInterval(function () { readValues();},refreshTime*1000);
 	readValues()
 }
+
  function stopAutoRead(){
 	clearInterval(timer);
  }
 
 function readValues(){
-	var ipAddr = document.getElementById("ipAddress").value;
-	var urlInputs = "http:/"+ipAddr+":80/sensors";
-	var responseText = null;
-	
-	// Check if IP address is valid
-	if (!validateIPv4(ipAddr)){
-		stopAutoRead();
-		window.alert('IP Address not valid!');
-		return;
+	var ipAddr = document.getElementById("ipAddress2").value;
+	var responseText = null;	
+	var url;
+	if (document.domain != ipAddr){
+		url = "http://"+ipAddr+":80/" + "ports";
+	} else {
+		url = "/" + "ports";
 	}
-	
-	// Create request and check if the navigation browser is valid
-	var xhr = createCORSRequest('GET', urlInputs);
-	if (!xhr) {
-		stopAutoRead();
-		window.alert('CORS not supported');
-		return;
-	}
-	// Response handlers
-	xhr.onload = function() {		
-		var values = JSON.parse(xhr.responseText);
-		var table = document.getElementById("analogReads");
-		table.innerHTML = "";
-		for (var i = 0; i<6; i++){
-			var port = values[i].in;
-			var type = values[i].val;
-			table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + type + "</center></td></tr>";
-        }
-		readOutputs();
-	};
-	xhr.onerror = function() {
-		stopAutoRead();
-		window.alert("Woops, there was an error making the request.\nURL:'"+urlInputs+"'");
-	};
-	xhr.send();
-}
-
-function setOutput(code) {
-    var ipAddr = document.getElementById("ipAddress").value;
-    var urlOutputs = "http:/" + ipAddr + ":80/out/" + code;
-    var xhr = createCORSRequest('GET', urlOutputs);
-    xhr.onload = function () {
-        var values = JSON.parse(xhr.responseText);
-        var table = document.getElementById("actuators");
-        table.innerHTML = "";
-        for (var i = 0; i < 6; i++) {
-            var port = values[i].out;
-            var value = values[i].val;
-			if (value!="Empty"){
-				table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td><div class='btn-group btn-group-sm'><button class='lbl btn-success' onclick='setOutput(\"" + i + "1\")'>On</button><button class='lbl btn-danger btn-xs' onclick='setOutput(\"" + i + "0\")'>Off</button></div></td></tr>";
-			} else {
-				table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td></td></tr>";
-			}
-        }
-    };
-    xhr.onerror = function () {
-        stopAutoRead();
-        window.alert("Woops, there was an error making the request.\nURL:'" + urlOutputs + "'");
-    };
-    xhr.send();
-}
-
-function readOutputs() {
-    var ipAddr = document.getElementById("ipAddress").value;
-    var urlOutputs = "http:/" + ipAddr + ":80/actuators";
-    var xhr = createCORSRequest('GET', urlOutputs);
-    xhr.onload = function () {
-        var values = JSON.parse(xhr.responseText);
-        var table = document.getElementById("actuators");
-        table.innerHTML = "";
-        for (var i = 0; i < 6; i++) {
-            var port = values[i].out;
-            var value = values[i].val;
-			if (value!="Empty"){
-				table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td><div class='btn-group btn-group-sm'><button class='lbl btn-success' onclick='setOutput(\"" + i + "1\")'>On</button><button class='lbl btn-danger btn-xs' onclick='setOutput(\"" + i + "0\")'>Off</button></div></td></tr>";
-			} else {
-				table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td></td></tr>";
-			}
-		}
-    };
-    xhr.onerror = function () {
-        stopAutoRead();
-        window.alert("Woops, there was an error making the request.\nURL:'" + urlOutputs + "'");
-    };
-    xhr.send();
-}
-
-function readInputs(){
-	var ipAddr = document.getElementById("ipAddress").value;
-	var url = "http:/"+ipAddr+":80/sensors";
-	var responseText = null;
 	
 	// Check if IP address is valid
 	if (!validateIPv4(ipAddr)){
@@ -312,57 +323,197 @@ function readInputs(){
 		window.alert('CORS not supported');
 		return;
 	}
-	
 	// Response handlers
 	xhr.onload = function() {		
-		var values = JSON.parse(xhr.responseText);
-		var table = document.getElementById("analogReads");
-		table.innerHTML = "";
-		for (var i = 0; i<6; i++){
-			var port = values[i].in;
-			var type = values[i].val;
-			table.innerHTML += "<tr><td><center>"+port+"</center></td><td><center>"+type+"</center></td></tr>";		}
-	};
-
-	xhr.onerror = function() {
-		stopAutoRead();
-		window.alert("Woops, there was an error making the request.\nURL:'"+url+"'");
+		showPorts (xhr.responseText);
 	};
 
 	xhr.send();
 }
 
+function setOutput(code) {
+    var ipAddr = document.getElementById("ipAddress2").value;
+	var urlOutputs;
+	if (document.domain != ipAddr){
+		urlOutputs = "http://"+ipAddr+":80/" + "out/" + code;
+	} else {
+		urlOutputs = "/" + "out/" + code;
+	}
+    var xhr = createCORSRequest('GET', urlOutputs);
+
+    xhr.onload = function () {
+        showPorts (xhr.responseText);
+    };
+    xhr.send();
+}
+
+/******************************************************
+ *              DEVICE DISCOVERY FUNCTION             *
+ ******************************************************/
+var discoveryCount;
+var discoveryIndex;
+var discoveryIpCurrent;
+
+function nextDiscover (){
+	// Generate Ping
+	new ping(discoveryIpCurrent, function (ip, status, e) {
+		var progressbar = document.getElementById("progressbar");
+		var progresslbl = document.getElementById("progresslbl");
+		var devicesTable = document.getElementById("devicesTable");
+		// Update Progress bar
+		var percent = parseFloat(progressbar.getAttribute("percent"));
+		var label = "";
+		percent += 1/(discoveryCount)*100.0;
+		progressbar.setAttribute("percent", percent);
+		progressbar.setAttribute("style", "width: " + percent + "%");
+		progresslbl.innerHTML = Math.round(percent) + "% Complete";
+		if (status == "arduino"){
+			label = "<span class=\"label " + "label-success"+"\">"+"Online Arduino"+"</span>";
+		} else if (status == "server"){
+			label = "<span class=\"label " + "label-warning"+"\">"+"Other Device"+"</span>";
+		} else if (status == "aborted" && document.getElementById("showOffline").checked == true){
+			label = "<span class=\"label " + "label-danger"+"\">"+"Aborted Request!"+"</span>";
+		} else if (document.getElementById("showOffline").checked == true) {
+			label = "<span class=\"label " + "label-danger"+"\">"+"Offline"+"</span>";
+		}
+		
+		if (label != ""){
+			devicesTable.innerHTML += "<tr><td>"+ip+"</td><td><center>"+label+"</center></td></tr>";
+		}
+	});
+	// Increment the IP address by one
+	discoveryIpCurrent = addOneIPv4(discoveryIpCurrent);
+	discoveryIndex = discoveryIndex + 1;
+	if (discoveryIndex<discoveryCount)
+		discoveryTimer = setTimeout(function(){ nextDiscover();}, 1000);
+}
+
+/******************************************************
+ *              FIND DEVICE FUNCTION                  *
+ ******************************************************/
 function findDevices () {
 	var startAddr =  document.getElementById("startIP").value;
 	var stopAddr =  document.getElementById("endIP").value;
 	
-	var startAdrrInt = convertIPv4FromString(startAddr);
+	var startAddrInt = convertIPv4FromString(startAddr);
 	var stopAddrInt = convertIPv4FromString(stopAddr);
+	discoveryIpCurrent = startAddr;
 	
-	if (startAdrrInt==null || stopAddrInt==null){
+	if (startAddrInt==null || stopAddrInt==null){
 		return;
 	}
 	
-	var comparation = compareIPv4 (stopAddrInt, startAdrrInt);
+	var comparation = compareIPv4 (stopAddrInt, startAddrInt);
 	if (comparation <= 0){
 		window.alert("The start address must be lower than the stop address\nStart address: " + startAddr + "\nStop address: " + stopAddr);
 		return;
 	}
-	var count = countAddr (stopAddrInt, startAdrrInt);
+	
+	discoveryCount = countAddr (stopAddrInt, startAddrInt);
 	var progressbar = document.getElementById("progressbar");
-	progressbar.setAttribute("aria-valuemax", count-1);
 	var progresslbl = document.getElementById("progresslbl");
 	var devicesTable = document.getElementById("devicesTable");
+	progressbar.setAttribute("percent", 0);
+	progressbar.setAttribute("style", "width: " + 0 + "%");
+	progresslbl.innerHTML = (0) + "% Complete";
 	devicesTable.innerHTML = "";
-	for (var i = 0; i<count; i++){
-		progressbar.setAttribute("style", "width: " + (i/(count-1)*100.0) + "%");
-		progresslbl.innerHTML = (i/(count-1)*100.0) + "% Complete";
-		//devicesTable.innerHTML += "<tr><td><center>"+i+"</center></td><td>192.168.10.2</td><td><span class=\"label \"" + "label-success"+"\">Success</span></td></tr>";
-		if (i%2==0){
-			devicesTable.innerHTML += "<tr><td><center>"+i+"</center></td><td>192.168.10.2</td><td><span class=\"label " + "label-success"+"\">Online</span></td></tr>";
-		}else{
-			devicesTable.innerHTML += "<tr><td><center>"+i+"</center></td><td>192.168.10.2</td><td><span class=\"label label-warning\">Offline</span></td></tr>";
-			}
-	}
-	//window.alert("Start address: " + startAddr + "\nStop address: " + stopAddr + "\nNumber of addreses: " + count);
+	discoveryIndex = 0;
+	nextDiscover();
 }
+
+/******************************************************
+ *                   PING FUNCTION                    *
+ ******************************************************/
+function ping(ip, callback) {
+// Example: http://jsfiddle.net/Maslow/GSSCD/
+	if (!this.inUse) {
+        this.status = 'unchecked';
+        this.inUse = true;
+        this.callback = callback;
+        this.ip = ip;
+        var _that = this;
+        this.xhr = createCORSRequest("GET", "http://" + ip + "/config");
+		this.xhr.timeout = 5000;
+        this.xhr.onload = function () {
+            _that.inUse = false;
+            _that.callback(_that.ip, 'arduino');
+
+        };
+        this.xhr.onerror = function (e) {
+            if (_that.inUse) {
+                _that.inUse = false;
+                _that.callback(_that.ip, 'server', e);
+            }
+        };
+        this.xhr.ontimeout = function () {
+			if (_that.inUse) {
+				_that.inUse = false;
+				_that.callback(_that.ip, 'timeout', 'timeout');
+			}
+		};
+		this.xhr.onabort = function () {
+			if (_that.inUse) {
+				_that.inUse = false;
+				_that.callback(_that.ip, 'computer', 'computer');
+			}
+		};
+		this.xhr.send();
+    }
+}
+
+/******************************************************
+ *                  Update PORT states                *
+ ******************************************************/
+ function showPorts (txtPort) {
+	var values = JSON.parse(txtPort);
+	var table = document.getElementById("analogReads");
+	document.getElementById("devName2").innerHTML = values.deviceName.replace("_", " ").replace("%20", " ");
+	table.innerHTML = "";
+	for (var i = 0; i<6; i++){
+		var port = "A" + i;
+		var value = values.inputs[i].val;
+		table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td></tr>";
+	}
+	table = document.getElementById("actuators");
+	table.innerHTML = "";
+	for (var i = 0; i<6; i++){
+		var port = "O" + i;
+		var value = values.outputs[i].val;
+		if (value!="Empty"){
+			table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td><div class='btn-group btn-group-sm'><button class='lbl btn-success' onclick='setOutput(\"" + i + "1\")'>On</button><button class='lbl btn-danger btn-xs' onclick='setOutput(\"" + i + "0\")'>Off</button></div></td></tr>";
+		} else {
+			table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td></td></tr>";
+		}
+	}
+ }
+
+/******************************************************
+ *                     Update CONFIG                  *
+ ******************************************************/
+ function showConfig (txtConfig) {
+	var config = JSON.parse(txtConfig);
+	document.getElementById("devName").innerHTML = config.deviceName.replace("_", " ").replace("%20", " ");
+	switch(config.ip){
+		case "1":
+			document.getElementById("setNewIp").innerHTML = "192.168.10.130 <span class='caret'></span>";
+			break;
+		case "2":
+			document.getElementById("setNewIp").innerHTML = "10.10.0.2 <span class='caret'></span>";
+			break;
+		case "3":
+			document.getElementById("setNewIp").innerHTML = "10.10.68.130 <span class='caret'></span>";
+			break;
+		default:
+			document.getElementById("setNewIp").innerHTML = "192.168.10.2 <span class='caret'></span>";
+			break;
+	}
+	
+	for (var i = 0; i<6; i++){
+		var type = config.ports[i].type;
+		configDevice("an" + i, type);
+	}
+	for (var i = 6; i<12; i++){
+		var type = config.ports[i].type;
+		configDevice("out" + (i-6), type);
+	}
+ }
