@@ -19,6 +19,7 @@ if (document.domain != ""){
 		configDev("config");
 	}, 1000);
 }
+
 /******************************************************
  *              CONFIGURE Arduino Port                *
  ******************************************************/
@@ -278,18 +279,21 @@ function configDev(sufix){
  var timer = null;
  function startAutoRead (){
 	var refreshTime = document.getElementById("refreshTime").value;
+	document.getElementById("startStopButtons").innerHTML = "<button type='button' class='btn btn-default'>Start</button><button type='button' class='btn btn-danger' onclick='stopAutoRead()'>Stop</button>";
 	if (!parseInt(refreshTime)>0){
 		window.alert("The refresh time must be numeric!");
 		return;
 	}
-	
-	clearInterval(timer);
+	if (timer!=null)
+		stopAutoRead();
 	timer = setInterval(function () { readValues();},refreshTime*1000);
 	readValues()
 }
 
  function stopAutoRead(){
 	clearInterval(timer);
+	timer = null;
+	document.getElementById("startStopButtons").innerHTML = "<button type='button' class='btn btn-success' onclick='startAutoRead()'>Start</button><button type='button' class='btn btn-deault'>Stop</button>";
  }
 
 function readValues(){
@@ -472,7 +476,9 @@ function ping(ip, callback) {
 	for (var i = 0; i<6; i++){
 		var port = "O" + i;
 		var value = values.outputs[i].val;
-		if (value!="Empty"){
+		if (value=="On"){
+			table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td><div class='btn-group btn-group-sm'><button class='lbl btn-success' onclick='setOutput(\"" + i + "1\")'>On</button><button class='lbl btn-danger btn-xs' onclick='setOutput(\"" + i + "0\")'>Off</button></div></td></tr>";
+		} else if (value=="Off"){
 			table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td><div class='btn-group btn-group-sm'><button class='lbl btn-success' onclick='setOutput(\"" + i + "1\")'>On</button><button class='lbl btn-danger btn-xs' onclick='setOutput(\"" + i + "0\")'>Off</button></div></td></tr>";
 		} else {
 			table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td></td></tr>";
