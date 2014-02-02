@@ -493,21 +493,21 @@ function ping(ip, callback) {
 	var config = JSON.parse(txtConfig);
 	document.getElementById("devName").innerHTML = config.deviceName.replace("_", " ").replace("%20", " ");
 	switch(config.ip){
+		case "0":
+			document.getElementById("setNewIp").innerHTML = "192.168.10.2/24 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "192.168.10.2";
+			break;
 		case "1":
-			document.getElementById("setNewIp").innerHTML = "192.168.10.130 <span class='caret'></span>";
+			document.getElementById("setNewIp").innerHTML = "192.168.10.130/26 <span class='caret'></span>";
 			document.getElementById("setNewIp").value = "192.168.10.130";
 			break;
 		case "2":
-			document.getElementById("setNewIp").innerHTML = "10.10.0.2 <span class='caret'></span>";
-			document.getElementById("setNewIp").value = "10.10.0.2";
-			break;
-		case "3":
-			document.getElementById("setNewIp").innerHTML = "10.10.68.130 <span class='caret'></span>";
-			document.getElementById("setNewIp").value = "10.10.68.130";
+			document.getElementById("setNewIp").innerHTML = "10.0.1.2/24 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "10.0.1.2";
 			break;
 		default:
-			document.getElementById("setNewIp").innerHTML = "192.168.10.2 <span class='caret'></span>";
-			document.getElementById("setNewIp").value = "192.168.10.2";
+			document.getElementById("setNewIp").innerHTML = "10.0.1.130/26 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "10.0.1.130";
 			break;
 	}
 	

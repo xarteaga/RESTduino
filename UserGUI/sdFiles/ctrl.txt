@@ -19,6 +19,7 @@ if (document.domain != ""){
 		configDev("config");
 	}, 1000);
 }
+
 /******************************************************
  *              CONFIGURE Arduino Port                *
  ******************************************************/
@@ -50,7 +51,7 @@ function configurePort(portId, type){
 		return;
 	}
 	
-	configDev("set/" + code)
+	configDevProtected("set/" + code)
 }
 
 /******************************************************
@@ -218,16 +219,8 @@ function createCORSRequest(method, url) {
 function configDevProtected(sufix){
 	var ipAddr = document.getElementById("ipAddress").value;
 	var url = "/" + sufix;
-	if (document.domain != ipAddr){
-		window.alert("This functionality is only available for the local user!");
-		return;
-	}
-
-	var responseText = null;
-	
-	// Check if IP address is valid
-	if (!validateIPv4(ipAddr)){
-		window.alert('IP Address not valid!');
+	if (document.domain != document.getElementById("setNewIp").value){
+		window.alert("This functionality is only available for computers inside server network! (Address: '"+document.getElementById("setNewIp").value+"')");
 		return;
 	}
 	
@@ -286,17 +279,21 @@ function configDev(sufix){
  var timer = null;
  function startAutoRead (){
 	var refreshTime = document.getElementById("refreshTime").value;
+	document.getElementById("startStopButtons").innerHTML = "<button type='button' class='btn btn-default'>Start</button><button type='button' class='btn btn-danger' onclick='stopAutoRead()'>Stop</button>";
 	if (!parseInt(refreshTime)>0){
 		window.alert("The refresh time must be numeric!");
 		return;
 	}
-		
+	if (timer!=null)
+		stopAutoRead();
 	timer = setInterval(function () { readValues();},refreshTime*1000);
 	readValues()
 }
 
  function stopAutoRead(){
 	clearInterval(timer);
+	timer = null;
+	document.getElementById("startStopButtons").innerHTML = "<button type='button' class='btn btn-success' onclick='startAutoRead()'>Start</button><button type='button' class='btn btn-deault'>Stop</button>";
  }
 
 function readValues(){
@@ -479,7 +476,9 @@ function ping(ip, callback) {
 	for (var i = 0; i<6; i++){
 		var port = "O" + i;
 		var value = values.outputs[i].val;
-		if (value!="Empty"){
+		if (value=="On"){
+			table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td><div class='btn-group btn-group-sm'><button class='lbl btn-success' onclick='setOutput(\"" + i + "1\")'>On</button><button class='lbl btn-danger btn-xs' onclick='setOutput(\"" + i + "0\")'>Off</button></div></td></tr>";
+		} else if (value=="Off"){
 			table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td><div class='btn-group btn-group-sm'><button class='lbl btn-success' onclick='setOutput(\"" + i + "1\")'>On</button><button class='lbl btn-danger btn-xs' onclick='setOutput(\"" + i + "0\")'>Off</button></div></td></tr>";
 		} else {
 			table.innerHTML += "<tr><td><center>" + port + "</center></td><td><center>" + value + "</center></td><td></td></tr>";
@@ -494,17 +493,21 @@ function ping(ip, callback) {
 	var config = JSON.parse(txtConfig);
 	document.getElementById("devName").innerHTML = config.deviceName.replace("_", " ").replace("%20", " ");
 	switch(config.ip){
+		case "0":
+			document.getElementById("setNewIp").innerHTML = "192.168.10.2/24 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "192.168.10.2";
+			break;
 		case "1":
-			document.getElementById("setNewIp").innerHTML = "192.168.10.130 <span class='caret'></span>";
+			document.getElementById("setNewIp").innerHTML = "192.168.10.130/26 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "192.168.10.130";
 			break;
 		case "2":
-			document.getElementById("setNewIp").innerHTML = "10.10.0.2 <span class='caret'></span>";
-			break;
-		case "3":
-			document.getElementById("setNewIp").innerHTML = "10.10.68.130 <span class='caret'></span>";
+			document.getElementById("setNewIp").innerHTML = "10.0.1.2/24 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "10.0.1.2";
 			break;
 		default:
-			document.getElementById("setNewIp").innerHTML = "192.168.10.2 <span class='caret'></span>";
+			document.getElementById("setNewIp").innerHTML = "10.0.1.130/26 <span class='caret'></span>";
+			document.getElementById("setNewIp").value = "10.0.1.130";
 			break;
 	}
 	

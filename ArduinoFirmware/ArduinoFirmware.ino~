@@ -358,82 +358,32 @@ void setup() {
 
   // start the Ethernet connection and the server:
   byte ipAddr [4];
-  byte gwAddr [4];
-  byte subnet [4];
-  byte dns[4] = {147, 83, 2, 3};
-  
-    if (conf.ip == 0){ /* --- NETWORK CONFIGURATION 0 --- */
-    // Ip Address 192.168.10.2
+  if (conf.ip==1){
     ipAddr[0] = 192;
     ipAddr[1] = 168;
-    ipAddr[2] = 10;
-    ipAddr[3] = 2;
-    // Gateway Address 192.168.10.1
-    gwAddr[0] = 192;
-    gwAddr[1] = 168;
-    gwAddr[2] = 10;
-    gwAddr[3] = 1;
-    // Subnet Mask 255.255.255.0 (/24)
-    subnet[0] = 255;
-    subnet[1] = 255;
-    subnet[2] = 255;
-    subnet[3] = 0;
-  } else if (conf.ip==1){ /* --- NETWORK CONFIGURATION 1 --- */
-    // Ip Address 192.168.10.130
-    ipAddr[0] = 192;
-    ipAddr[1] = 168;
-    ipAddr[2] = 10;
+    ipAddr[2] = 68;
     ipAddr[3] = 130;
-    // Gateway Address 192.168.10.1
-    gwAddr[0] = 192;
-    gwAddr[1] = 168;
-    gwAddr[2] = 10;
-    gwAddr[3] = 129;
-    // Subnet Mask 255.255.255.192 (/26)
-    subnet[0] = 255;
-    subnet[1] = 255;
-    subnet[2] = 255;
-    subnet[3] = 192;
   } else if (conf.ip==2){
-    // Ip Address 10.0.1.2
     ipAddr[0] = 10;
-    ipAddr[1] = 0;
-    ipAddr[2] = 1;
+    ipAddr[1] = 10;
+    ipAddr[2] = 10;
     ipAddr[3] = 2;
-    // Gateway Address 10.0.1.1
-    gwAddr[0] = 10;
-    gwAddr[1] = 0;
-    gwAddr[2] = 1;
-    gwAddr[3] = 1;
-    // Subnet Mask 255.255.255.192 (/24)
-    subnet[0] = 255;
-    subnet[1] = 255;
-    subnet[2] = 255;
-    subnet[3] = 0;
   } else if (conf.ip==3){
-    // Ip Address 10.0.1.130
     ipAddr[0] = 10;
-    ipAddr[1] = 0;
-    ipAddr[2] = 1;
+    ipAddr[1] = 10;
+    ipAddr[2] = 68;
     ipAddr[3] = 130;
-    // Gateway Address 10.0.1.129
-    gwAddr[0] = 10;
-    gwAddr[1] = 0;
-    gwAddr[2] = 1;
-    gwAddr[3] = 129;
-    // Subnet Mask 255.255.255.192 (/26)
-    subnet[0] = 255;
-    subnet[1] = 255;
-    subnet[2] = 255;
-    subnet[3] = 192;
+  } else {
+    ipAddr[0] = 192;
+    ipAddr[1] = 168;
+    ipAddr[2] = 10;
+    ipAddr[3] = 2;
   } 
   // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
   byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
   IPAddress ip (ipAddr[0],ipAddr[1],ipAddr[2],ipAddr[3]);
   Ethernet.begin(mac, ip);
-  
-
   
   server.begin();
   Serial.print(F("Server is at "));

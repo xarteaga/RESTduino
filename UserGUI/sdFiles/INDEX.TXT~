@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Hedera Project</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+    <meta name="description" content="This is the webpage of hedera project for Arduino Ethernet">
+    <meta name="author" content="X. Arteaga">
+
+    <!-- Le styles -->
+	<script type='text/javascript'>
+		if (document.domain == ""){
+			document.write("<link href='css/bootstrap.min.css' rel='stylesheet'>")
+			document.write("<link href='css/bootstrap-responsive.min.css' rel='stylesheet'>")
+		} else {
+			document.write("<link href='bs.css' rel='stylesheet'>")
+			document.write("<link href='bs-res.css' rel='stylesheet'>")
+		}
+	</script>
+
+    <!-- Fav and touch icons -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="./ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="./ico/apple-touch-icon-114-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" sizes="72x72" href="./ico/apple-touch-icon-72-precomposed.png">
+	<link rel="apple-touch-icon-precomposed" href="./ico/apple-touch-icon-57-precomposed.png">
+	<link rel="shortcut icon" href="./ico/favicon.png">
+ </head>
+
+<body>
+	<!-- Navigation bar -->
+	<div class="navbar navbar-inverse ">
+		<div class="navbar-inner">
+			<div class="container">
+				<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<a class="brand" href="#">Arduino Sensor Platform</a>
+				<div class="nav-collapse collapse">
+					<ul class="nav">
+						<li class="active"><a href="./index.html">This</a></li>
+						<li class=""><a href="http://arduino.cc/">Arduino homepage</a></li>
+						<li class=""><a href="http://www.tinkerkit.com/">Tinker kit! homepage</a></li>
+						<li class=""><a href="http://getbootstrap.com/">Bootstrap homepage</a></li>
+					</ul>
+				</div><!--/.nav-collapse -->
+			</div>
+		</div>
+	</div>
+
+	<div class="container tabbable tabs-left">
+		<ul class="nav nav-tabs"><br><br><br><br>
+			<li class="active"><a href="#scandevices" data-toggle="tab">Scan devices</a></li>
+			<li><a href="#confdev" data-toggle="tab">Configure Device</a></li>
+			<li><a href="#confports" data-toggle="tab">Ports</a></li>
+			<li><a href="#monitor" data-toggle="tab">Monitor</a></li>
+			<br><br><br><br><br><br><br><br><br><br>
+		</ul>
+		<div class="tab-content">
+			<!-- Arduino Scanner Tab -->
+		    <div id="scandevices" class="tab-pane active">
+				<h2>Scan devices</h2>
+				<div class="row-fluid">
+					<!-- Form for scan devices -->
+					<div class="span4">
+						<form role="form">
+							<div class="form-group">
+								<label for="startIP">Start IP Address</label>
+								<input type="text" class="form-control" id="startIP" value="147.83.118.1">
+							</div>
+							<div class="form-group">
+								<label for="endIP">Stop IP Address</label>
+								<input type="text" class="form-control" id="endIP" value="147.83.118.255">
+							</div>
+							<div class="input-group">
+								<label class="checkbox">
+									<input type="checkbox" id="showOffline" value="__option__">
+									Show offline IP devices
+								</label>
+							</div><!-- /input-group -->
+						</form>
+						<button type="submit" onclick="findDevices()" class="btn btn-default">Scan Devices</button>
+						<br><br><br>
+						<label>Progress:</label>
+						<div class="progress progress-striped active">
+							<div id="progressbar" class="bar"  role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+								<span id="progresslbl" class="sr-only" text-align="centered"></span>
+							</div>
+						</div>
+					</div>
+					<!-- Table of found devices -->
+					<div class="span3 offset1">
+						<table class="table table-hover">
+							<caption>Found Devices</caption>
+							<thead>
+								<tr>
+									<th><center> IP Address </center></th>
+									<th><center> Status </center></th>
+								</tr>
+							</thead>
+							<tbody id="devicesTable">
+								<tr><td>...</td><td><center><span class="label label-default">Unchecked</span></center></td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="well">
+					<h3>Tips</h3>
+					<p>
+						Set the IP range for scanning devices in the network and click the button 'Scan Devices'.
+						It will appear the IPs of all the network devices available in the IP range.
+					</p>
+					<p>
+						In case of being Arduinos server they will appear as a available Arduino Server (<span class="label label-success">Online Arduino</span>). If the detected device is other kind of network device it will
+						appear as an other device (<span class="label label-warning">Other Device</span>).
+					</p>
+					<p>
+						In case of you want see all the scanned IP addresses, check the option "Show offline IP devices".
+					</p>
+					<p>
+						After scan the network devices you can copy the IP Address of any Arduino Server for monitorize
+						or configure its ports.
+					</p>
+				</div>
+			</div>
+			<!-- Arduino IP and Name configuration tab -->
+			<div id="confdev" class="tab-pane">
+				<h2>Configure device IP and Name</h2>
+				<form>
+					<label>New name for the device</label>
+					<div class='btn-group'>
+						<button id='setNewIp' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>
+							New IP <span class='caret'></span>
+						</button>
+						<ul class='dropdown-menu'>
+							<li><a type="button" onclick='configDevProtected("set/a0")'>192.168.10.2 </a></li>
+							<li><a type="button" onclick='configDevProtected("set/a1")'>192.168.10.130 </a></li>
+							<li><a type="button" onclick='configDevProtected("set/a2")'>10.10.0.2 </a></li>
+							<li><a type="button" onclick='configDevProtected("set/a3")'>10.10.68.130 </a></li>
+						</ul>
+					</div>
+				</form>
+				<form>
+					<div class="form-group input-append">
+						<label for="newName">New name for the device</label>
+						<input type="text" class="form-control" id="newName" placeholder="My Arduino">
+						<button type="button" class="btn btn-info" onClick="configDevProtected('set/n' + document.getElementById('newName').value.replace(' ', '_'))">
+							Change Name
+						</button>
+					</div>
+				</form>
+				<div class="well">
+					<h3>Tips</h3>
+					<p>
+						Configure your local Arduino server IP. You only can choose between a limited number of
+						IP Addresses. After select the new IP Address you must restart your Arduino for update the IP Address.
+					</p>
+					<p>
+						You can also change your Arduino name or identifier by writing a new name (shorter than 15 characters) and clicking "Change name".
+					</p>
+				</div>
+			</div>
+			<!-- Arduino ports configuration tab -->
+		    <div id="confports" class="tab-pane">
+				<h2>Configure device ports</h2>
+				<form>
+					<div class="form-group input-append">
+						<label for="ipAddress">IP Address of the device</label>
+						<input type="text" class="form-control" id="ipAddress">
+						<button type="button" class="btn btn-info" onClick="configDev('config')">Connect</button>
+					</div>
+				</form>
+				<div class="row-fluid">
+					<!-- List of inputs -->
+					<div class="span2 offset2"><br><br>
+						<form id="inputs"><center>
+							<script type="text/javascript">
+								for (var i=0;i<6;i++)
+								{ 
+									document.write("<div class='btn-group'>");
+									document.write("<button id='an" + i + "' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>Empty <span class='caret'></span></button>");
+									document.write("<ul class='dropdown-menu'>");
+									document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Raw\")'>Raw</a></li>");
+									document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Temperature\")'>Temperature</a></li>");
+									document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Potentiometer\")'>Potentiometer</a></li>");
+									document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Light\")'>Light</a></li>");
+									document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Logical\")'>Logical</a></li>");
+									document.write("<li class='divider'></li>");
+									document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Empty\")'>Empty</a></li>");
+									document.write("</ul>");
+									document.write("</div>");
+									document.write("<br><br>");
+								}
+							</script></center>
+						</form>
+					</div>
+					<!-- TinkerKit shield image -->
+					<div class="span4">
+						<center>
+							<h3 id="devName"><i>Not connected</i></h3>
+							<script type='text/javascript'>
+								if (document.domain == ""){
+									document.write("<img src='./img/tinkershield.jpg' align='middle' alt='some_text'>")
+								} else {
+									document.write("<img src='shield.jpg' align='middle' alt='some_text'>")
+								}
+							</script>
+						</center>
+					</div>
+					<!-- List of outputs -->
+					<div class="span2"><br><br>
+						<form><center>
+							<script type="text/javascript">
+								for (var i=0;i<6;i++)
+								{ 
+									document.write("<div class='btn-group'>");
+									document.write("<button id='out" + i + "' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>Empty <span class='caret'></span></button>");
+									document.write("<ul class='dropdown-menu'>");
+									document.write("<li><a onclick='configurePort(\"out" + i + "\", \"Logical\")'>Logical</a></li>");
+									document.write("<li class='divider'></li>");
+									document.write("<li><a onclick='configurePort(\"out" + i + "\", \"Empty\")'>Empty</a></li>");
+									document.write("</ul>");
+									document.write("</div>");
+									document.write("<br><br>");
+								}
+							</script></center>
+						</form>
+					</div>
+				</div>
+				<div class="well">
+					<h3>Tips</h3>
+					<p>
+						Select an Arduino in the network writing its IP. Click "Connect" for update its configuration. You can configure the input
+						ports clicking on the buttons and selecting the type of input.
+					</p>
+					<p>
+						In case of leaving an input or output empty, select the empty option.
+					</p>
+					<p>
+						<span class="label label-warning">Warning</span> The ouputs "O0" and "O1" are reserved for the Network and the File storage controllers. They
+						will be always on high level (On).
+					</p>
+					<h4>Port Types</h4>
+					<p><span class="label label-info">Raw</span> This type is the Raw value read by the Arduino's ADC. The value is represented as a 10 bit unsigned integer, from 0 to 1023.</p>
+					<p><span class="label btn-danger">Temperature</span> This type is the temperature read from a thermistor connected in the analogical input port. The value is represented as a Celsius degrees with one figure.</p>
+					<p><span class="label label-success">Potentiometer</span> This type is the potentiometer read from a potentiometer connected in the analogical input port. The value is represented as a decimal percentage with one figure.</p>
+					<p><span class="label label-warning">Light</span> This type is the light read from a LDR connected in the analogical input port. The value is represented with the Raw value of the ADC.</p>
+					<p><span class="label btn-primary">Logical</span> This type is the logic read from a switch connected in the analogical input port. The value is represented with using a logic states: True (On) or False (Off).</p>
+				</div>
+			</div>
+			<!-- Arduino reader -->
+		    <div id="monitor" class="tab-pane">
+				<h2>Read Values</h2>
+				<div class="row-fluid">
+					<!-- Form for scan devices -->
+					<div class="span4">
+						<form>
+							<div class="form-group input-append">
+								<label for="ipAddress2">IP Address of the device</label>
+								<input type="text" class="form-control" id="ipAddress2">
+							</div>
+							<div class="form-group">
+								<label for="refreshTime">Refresh time [s]</label>
+								<input type="number" class="form-control" id="refreshTime" value="5">
+							</div>
+							<button id="startRead" type="button" class="btn btn-success" onclick="startAutoRead()">Start</button>
+							<button id="stopRead" type="button" class="btn btn-danger" onclick="stopAutoRead()">Stop</button>
+						</form>
+					</div>
+					<center><h3 id="devName2"><i>Not Connected</i></h3></center>
+					<div class="span3 offset1">
+						<table class="table table-hover">
+							<caption>Analog inputs</caption>
+							<thead>
+								<tr>
+									<th><center> Port </center></th>
+									<th><center> Value </center></th>
+								</tr>
+							</thead>
+							<tbody id="analogReads">
+								<tr><td>...</td><td><center>Empty</center></td></tr>
+							</tbody>
+						</table>
+					</div>
+					<div class="span3">
+						<table class="table table-hover">
+							<caption>Actuators</caption>
+							<thead>
+								<tr>
+									<th><center> Port </center></th>
+									<th><center> Value </center></th>
+								</tr>
+							</thead>
+							<tbody id="actuators">
+								<tr><td>...</td><td><center>Empty</center></td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>	
+				<div class="well">
+					<h3>Tips</h3>
+					<p>
+						Write an Arduino IP address and a refresh time. Click the "Start" button to start
+						to read data from connected sensors and actuators of the selected Arduino Server.
+					</p>
+					<p>
+						Click the "Stop" button for stop reading data from the selected Arduino.
+					</p>
+					<p>
+						<span class="label label-warning">Warning</span> Due the fact that Arduino is quite limited,
+						it only allows one simultaneous request. In case of two or more request at same time your browser will give an alert.
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<hr>
+	<footer>
+		<p>Developed by X. Arteaga, 2013</p>
+	</footer>
+	
+		<!-- Le javascript
+    ================================================== -->
+	<script type="text/javascript">
+	var closeScript = "<_/script>"
+	closeScript = closeScript.replace("_", "");
+		/* Load the files from local repo (for test) */
+		if (document.domain == "") {
+			document.write("<script type='text/javascript' src='./js/jquery.min.js'>" + closeScript);
+			document.write("<script type='text/javascript' src='./js/bootstrap.min.js'>" + closeScript);
+			document.write("<script type='text/javascript' src='./js/control.js'>" + closeScript);
+			document.getElementById("ipAddress").value = "192.168.10.2";
+			document.getElementById("ipAddress2").value = "192.168.10.2";
+		/* Load the files from Arduino server (for deployment)*/
+		}  else {
+			document.write("<script type='text/javascript' src='jquery.js'>" + closeScript);
+			document.write("<script type='text/javascript' src='bs.js'>" + closeScript);
+			document.write("<script type='text/javascript' src='control.js'>" + closeScript);
+			document.getElementById("ipAddress").value = document.domain;
+			document.getElementById("ipAddress2").value = document.domain;
+		}
+	</script>
+</body>
+</html>

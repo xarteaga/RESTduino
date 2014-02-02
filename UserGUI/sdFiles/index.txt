@@ -2,11 +2,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Hedera Project</title>
+    <title>Geomatics4BioSystems</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	
-    <meta name="description" content="This is the webpage of hedera project for Arduino Ethernet">
-    <meta name="author" content="X. Arteaga">
+    <meta name="description" content="Geomatics for Biological Systems">
+    <meta name="author" content="X. Arteaga; J. Olmos">
 
     <!-- Le styles -->
 	<script type='text/javascript'>
@@ -18,13 +18,6 @@
 			document.write("<link href='bs-res.css' rel='stylesheet'>")
 		}
 	</script>
-
-    <!-- Fav and touch icons -->
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="./ico/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="./ico/apple-touch-icon-114-precomposed.png">
-	<link rel="apple-touch-icon-precomposed" sizes="72x72" href="./ico/apple-touch-icon-72-precomposed.png">
-	<link rel="apple-touch-icon-precomposed" href="./ico/apple-touch-icon-57-precomposed.png">
-	<link rel="shortcut icon" href="./ico/favicon.png">
  </head>
 
 <body>
@@ -37,10 +30,11 @@
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				<a class="brand" href="#">Arduino Sensor Platform</a>
+				<a class="brand" href="#">Geomatics4BioSystems</a>
 				<div class="nav-collapse collapse">
 					<ul class="nav">
 						<li class="active"><a href="./index.html">This</a></li>
+						<li class=""><a href="https://github.com/xarteaga/RESTduino">Project Repository</a></li>
 						<li class=""><a href="http://arduino.cc/">Arduino homepage</a></li>
 						<li class=""><a href="http://www.tinkerkit.com/">Tinker kit! homepage</a></li>
 						<li class=""><a href="http://getbootstrap.com/">Bootstrap homepage</a></li>
@@ -52,10 +46,10 @@
 
 	<div class="container tabbable tabs-left">
 		<ul class="nav nav-tabs"><br><br><br><br>
-			<li class="active"><a href="#scandevices" data-toggle="tab">Scan devices</a></li>
-			<li><a href="#confdev" data-toggle="tab">Configure Device</a></li>
-			<li><a href="#confports" data-toggle="tab">Ports</a></li>
-			<li><a href="#monitor" data-toggle="tab">Monitor</a></li>
+			<li class="active"><a href="#scandevices" data-toggle="tab" onclick="stopAutoRead()">Scan devices</a></li>
+			<li><a href="#confdev" data-toggle="tab" onclick="stopAutoRead()">Configure Device</a></li>
+			<li><a href="#confports" data-toggle="tab" onclick="stopAutoRead()">Ports</a></li>
+			<li><a href="#monitor" data-toggle="tab" onclick="stopAutoRead()">Monitor</a></li>
 			<br><br><br><br><br><br><br><br><br><br>
 		</ul>
 		<div class="tab-content">
@@ -109,19 +103,20 @@
 				<div class="well">
 					<h3>Tips</h3>
 					<p>
-						Set the IP range for scanning devices in the network and click the button 'Scan Devices'.
-						It will appear the IPs of all the network devices available in the IP range.
+						Set the IP range for scanning devices in the network and click the button 'Scan Devices'. Your browser 
+						will list the IPs of all the network devices available in the IP range.
 					</p>
 					<p>
-						In case of being Arduinos server they will appear as a available Arduino Server (<span class="label label-success">Online Arduino</span>). If the detected device is other kind of network device it will
-						appear as an other device (<span class="label label-warning">Other Device</span>).
+						In case of finding an Arduino server the Status will appear as (<span class="label 
+						label-success">Online Arduino</span>). If the detected device is any other kind of network device the 
+						Status will appear as (<span class="label label-warning">Other Device</span>).
 					</p>
 					<p>
-						In case of you want see all the scanned IP addresses, check the option "Show offline IP devices".
+						In case that you want to see all the scanned IP addresses, check the option "Show offline IP devices".
 					</p>
 					<p>
-						After scan the network devices you can copy the IP Address of any Arduino Server for monitorize
-						or configure its ports.
+						After scanning the network devices you can copy the IP Address of any Arduino server in order to 
+						monitor it remotely.
 					</p>
 				</div>
 			</div>
@@ -135,10 +130,10 @@
 							New IP <span class='caret'></span>
 						</button>
 						<ul class='dropdown-menu'>
-							<li><a type="button" onclick='configDevProtected("set/a0")'>192.168.10.2 </a></li>
-							<li><a type="button" onclick='configDevProtected("set/a1")'>192.168.10.130 </a></li>
-							<li><a type="button" onclick='configDevProtected("set/a2")'>10.10.0.2 </a></li>
-							<li><a type="button" onclick='configDevProtected("set/a3")'>10.10.68.130 </a></li>
+							<li><a type="button" onclick='configDevProtected("set/a0")'>192.168.10.2/24:80 </a></li>
+							<li><a type="button" onclick='configDevProtected("set/a1")'>192.168.10.130/26:80 </a></li>
+							<li><a type="button" onclick='configDevProtected("set/a2")'>10.0.1.2/24:80 </a></li>
+							<li><a type="button" onclick='configDevProtected("set/a3")'>10.0.1.130/26:80 </a></li>
 						</ul>
 					</div>
 				</form>
@@ -154,11 +149,14 @@
 				<div class="well">
 					<h3>Tips</h3>
 					<p>
-						Configure your local Arduino server IP. You only can choose between a limited number of
-						IP Addresses. After select the new IP Address you must restart your Arduino for update the IP Address.
+						Configure your LOCAL Arduino server IP address. You only can choose among a limited number of IP 
+						addresses. After selecting a new IP Address you must reset your Arduino board in order to enforce the 
+						new IP address and configure your PC with an IP belonging to the new IP address range. The mask is 
+						always 255.255.255.0.
 					</p>
 					<p>
-						You can also change your Arduino name or identifier by writing a new name (shorter than 15 characters) and clicking "Change name".
+						You can also change your LOCAL Arduino name or identifier by writing a new name (shorter than 15 
+						characters) and clicking "Change name".
 					</p>
 				</div>
 			</div>
@@ -232,22 +230,30 @@
 				<div class="well">
 					<h3>Tips</h3>
 					<p>
-						Select an Arduino in the network writing its IP. Click "Connect" for update its configuration. You can configure the input
-						ports clicking on the buttons and selecting the type of input.
+						Select an Arduino in the network by typing its IP. Click "Connect" to load its configuration. If the 
+						Arduino IP is on your local network you can configure the input ports by clicking on the buttons and 
+						selecting the type of input.
 					</p>
 					<p>
-						In case of leaving an input or output empty, select the empty option.
+						In case of leaving an input or output unconnected, select the "Void" option.
 					</p>
 					<p>
-						<span class="label label-warning">Warning</span> The ouputs "O0" and "O1" are reserved for the Network and the File storage controllers. They
-						will be always on high level (On).
+						<span class="label label-warning">Warning</span> Never connect anything to the outputs "O0" or "O1". 
+						They are reserved for Arduino internal usage.
 					</p>
 					<h4>Port Types</h4>
-					<p><span class="label label-info">Raw</span> This type is the Raw value read by the Arduino's ADC. The value is represented as a 10 bit unsigned integer, from 0 to 1023.</p>
-					<p><span class="label btn-danger">Temperature</span> This type is the temperature read from a thermistor connected in the analogical input port. The value is represented as a Celsius degrees with one figure.</p>
-					<p><span class="label label-success">Potentiometer</span> This type is the potentiometer read from a potentiometer connected in the analogical input port. The value is represented as a decimal percentage with one figure.</p>
-					<p><span class="label label-warning">Light</span> This type is the light read from a LDR connected in the analogical input port. The value is represented with the Raw value of the ADC.</p>
-					<p><span class="label btn-primary">Logical</span> This type is the logic read from a switch connected in the analogical input port. The value is represented with using a logic states: True (On) or False (Off).</p>
+					<p><span class="label label-info">Void</span> This port type shows the raw value read by the Arduino A/D 
+					converter. The value is represented as a 10 bit unsigned integer, from 0 to 1023.</p>
+					<p><span class="label btn-danger">Temperature</span> This port type shows the temperature read from a 
+					thermistor connected at an analog input. The value is represented in Celsius degrees with a precision of one 
+					decimal digit.</p>
+					<p><span class="label label-success">Potentiometer</span> This port type shows the rotation angle of a 						potentiometer connected at an analog input. The value is represented as a percentage with a precision of one 
+					decimal digit.</p>
+					<p><span class="label label-warning">Light</span> TThis port type shows a measure of the illumination level of 
+					a LDR connected at an analog input. The value is represented as a 10 bit unsigned integer, from 0 to 1023 (raw 
+					value)</p>
+					<p><span class="label btn-primary">Logical</span> This port type shows the logical level read from a switch 
+					connected at a digital input. The value is represented with using logical states: True (On) or False (Off).</p>
 				</div>
 			</div>
 			<!-- Arduino reader -->
@@ -265,8 +271,10 @@
 								<label for="refreshTime">Refresh time [s]</label>
 								<input type="number" class="form-control" id="refreshTime" value="5">
 							</div>
-							<button id="startRead" type="button" class="btn btn-success" onclick="startAutoRead()">Start</button>
-							<button id="stopRead" type="button" class="btn btn-danger" onclick="stopAutoRead()">Stop</button>
+							<div id="startStopButtons">
+								<button id="startRead" type="button" class="btn btn-success" onclick="startAutoRead()">Start</button>
+								<button id="stopRead" type="button" class="btn btn-default" onclick="stopAutoRead()">Stop</button>
+							</div>
 						</form>
 					</div>
 					<center><h3 id="devName2"><i>Not Connected</i></h3></center>
@@ -302,15 +310,19 @@
 				<div class="well">
 					<h3>Tips</h3>
 					<p>
-						Write an Arduino IP address and a refresh time. Click the "Start" button to start
-						to read data from connected sensors and actuators of the selected Arduino Server.
+						Type an Arduino IP address and a refresh time. Click the "Start" button to start reading data from the 
+						sensors at the selected Arduino Server.
 					</p>
 					<p>
-						Click the "Stop" button for stop reading data from the selected Arduino.
+						Click the "Stop" button to stop reading data from the selected Arduino.
 					</p>
 					<p>
-						<span class="label label-warning">Warning</span> Due the fact that Arduino is quite limited,
-						it only allows one simultaneous request. In case of two or more request at same time your browser will give an alert.
+						Click "On/Off" to toggle the actuators at the selected Arduino Server.
+					</p>
+					<p>
+						<span class="label label-warning">Warning</span> Due to the fact that Arduino processing capabilities 
+						are limited, it only allows one simultaneous request. In case of two or more requests at same time 
+						your browser will pop up a notice window.
 					</p>
 				</div>
 			</div>
