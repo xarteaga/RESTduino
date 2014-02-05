@@ -1,6 +1,4 @@
-
 // Definitions
-#define SERVER_WEBPORT 80
 #define SERIAL_BAUDRATE 115200
 #define REQUEST_MAXBUFFER 30
 #define HEADER_MAXBUFFER 20
@@ -26,7 +24,7 @@ char request [REQUEST_MAXBUFFER];
 // Initialize the Ethernet server library
 // with the IP address and port you want to use 
 // (port 80 is default for HTTP):
-EthernetServer server(SERVER_WEBPORT);
+EthernetServer server = EthernetServer(0);
 
 /*****************************************************************************************************
  *                                                  EEPROM                                           *
@@ -361,6 +359,7 @@ void setup() {
   byte gwAddr [4];
   byte subnet [4];
   byte dns[4] = {147, 83, 2, 3};
+  uint16_t port = 0;
   
     if (conf.ip == 0){ /* --- NETWORK CONFIGURATION 0 --- */
     // Ip Address 192.168.10.2
@@ -378,6 +377,8 @@ void setup() {
     subnet[1] = 255;
     subnet[2] = 255;
     subnet[3] = 0;
+    // Port 80
+    port = 80;
   } else if (conf.ip==1){ /* --- NETWORK CONFIGURATION 1 --- */
     // Ip Address 192.168.10.130
     ipAddr[0] = 192;
@@ -394,6 +395,8 @@ void setup() {
     subnet[1] = 255;
     subnet[2] = 255;
     subnet[3] = 192;
+    // Port 8080
+    port = 8080;
   } else if (conf.ip==2){
     // Ip Address 10.0.1.2
     ipAddr[0] = 10;
@@ -410,6 +413,8 @@ void setup() {
     subnet[1] = 255;
     subnet[2] = 255;
     subnet[3] = 0;
+    // Port 80
+    port = 80;
   } else if (conf.ip==3){
     // Ip Address 10.0.1.130
     ipAddr[0] = 10;
@@ -426,6 +431,8 @@ void setup() {
     subnet[1] = 255;
     subnet[2] = 255;
     subnet[3] = 192;
+    // Port 8080
+    port = 8080;
   } 
   // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
@@ -433,13 +440,13 @@ void setup() {
   IPAddress ip (ipAddr[0],ipAddr[1],ipAddr[2],ipAddr[3]);
   Ethernet.begin(mac, ip);
   
-
-  
+  server.setPort(port);
   server.begin();
+  
   Serial.print(F("Server is at "));
   Serial.print(Ethernet.localIP());
   Serial.print(F(":"));
-  Serial.println(SERVER_WEBPORT);
+  Serial.println(port);
   
   // Setup outputs
   for (byte i = 0; i < 6; i++){
