@@ -240,22 +240,28 @@ function configDevProtected(sufix){
 }
 
 /******************************************************
- *           UPDATE Ports (for X-Domain)              *
+ *         UPDATE Ports (for cross Domain)            *
  ******************************************************/
 function configDev(sufix){
-	var ipAddr = document.getElementById("ipAddress").value;
-	var url;
-	if (document.domain != ipAddr){
-		url = "http://"+ipAddr+":80/" + sufix;
-	} else {
-		url = "/" + sufix;
-	}
-	var responseText = null;
-	
+	var res = document.getElementById("ipAddress").value.split(":");
+	var ipAddr = res[0];;
+	var port = location.port;
+
 	// Check if IP address is valid
 	if (!validateIPv4(ipAddr)){
 		window.alert('IP Address not valid!');
 		return;
+	}
+
+	if (res.length == 2){
+		port = res[1];
+	}
+	
+	var url;
+	if (document.domain != ipAddr){
+		url = "http://"+ipAddr+":"+port+"/" + sufix;
+	} else {
+		url = "/" + sufix;
 	}
 	
 	// Create request and check if the navigation browser is valid
@@ -297,11 +303,16 @@ function configDev(sufix){
  }
 
 function readValues(){
-	var ipAddr = document.getElementById("ipAddress2").value;
+	var res = document.getElementById("ipAddress2").value.split(":");
+	var ipAddr = res[0];
+	var port = 80;
+	if (res.length = 2){
+		port = res[1];
+	}
 	var responseText = null;	
 	var url;
 	if (document.domain != ipAddr){
-		url = "http://"+ipAddr+":80/" + "ports";
+		url = "http://"+ipAddr+":"+port+"/" + "ports";
 	} else {
 		url = "/" + "ports";
 	}
@@ -329,16 +340,23 @@ function readValues(){
 }
 
 function setOutput(code) {
-    var ipAddr = document.getElementById("ipAddress2").value;
-	var urlOutputs;
+        var res = document.getElementById("ipAddress2").value.split(":");
+        var ipAddr = res[0];
+        var port = 80;
+    
+        if (res.length == 2){
+            port = res[1];
+        }
+            
+        var urlOutputs;
 	if (document.domain != ipAddr){
-		urlOutputs = "http://"+ipAddr+":80/" + "out/" + code;
+		urlOutputs = "http://"+ipAddr+":"+port+"/" + "out/" + code;
 	} else {
 		urlOutputs = "/" + "out/" + code;
 	}
-    var xhr = createCORSRequest('GET', urlOutputs);
+        var xhr = createCORSRequest('GET', urlOutputs);
 
-    xhr.onload = function () {
+        xhr.onload = function () {
         showPorts (xhr.responseText);
     };
     xhr.send();
@@ -494,19 +512,19 @@ function ping(ip, callback) {
 	document.getElementById("devName").innerHTML = config.deviceName.replace("_", " ").replace("%20", " ");
 	switch(config.ip){
 		case "0":
-			document.getElementById("setNewIp").innerHTML = "192.168.10.2/24 <span class='caret'></span>";
+			document.getElementById("setNewIp").innerHTML = "192.168.10.2:80/24 <span class='caret'></span>";
 			document.getElementById("setNewIp").value = "192.168.10.2";
 			break;
 		case "1":
-			document.getElementById("setNewIp").innerHTML = "192.168.10.130/26 <span class='caret'></span>";
+			document.getElementById("setNewIp").innerHTML = "192.168.10.130:8080/26 <span class='caret'></span>";
 			document.getElementById("setNewIp").value = "192.168.10.130";
 			break;
 		case "2":
-			document.getElementById("setNewIp").innerHTML = "10.0.1.2/24 <span class='caret'></span>";
+			document.getElementById("setNewIp").innerHTML = "10.0.1.2:80/24 <span class='caret'></span>";
 			document.getElementById("setNewIp").value = "10.0.1.2";
 			break;
 		default:
-			document.getElementById("setNewIp").innerHTML = "10.0.1.130/26 <span class='caret'></span>";
+			document.getElementById("setNewIp").innerHTML = "10.0.1.130:8080/26 <span class='caret'></span>";
 			document.getElementById("setNewIp").value = "10.0.1.130";
 			break;
 	}
