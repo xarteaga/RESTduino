@@ -24,7 +24,7 @@ char request [REQUEST_MAXBUFFER];
 // Initialize the Ethernet server library
 // with the IP address and port you want to use 
 // (port 80 is default for HTTP):
-EthernetServer server = EthernetServer(0);
+EthernetServer server = EthernetServer(80);
 
 /*****************************************************************************************************
  *                                                  EEPROM                                           *
@@ -359,6 +359,7 @@ void setup() {
   byte gwAddr [4];
   byte subnet [4];
   byte dns[4] = {147, 83, 2, 3};
+  byte i;
   uint16_t port = 0;
   
     if (conf.ip == 0){ /* --- NETWORK CONFIGURATION 0 --- */
@@ -438,7 +439,7 @@ void setup() {
 // The IP address will be dependent on your local network:
   byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
   IPAddress ip (ipAddr[0],ipAddr[1],ipAddr[2],ipAddr[3]);
-  Ethernet.begin(mac, ip);
+  Ethernet.begin(mac, ip, dns, gwAddr, subnet); 
   
   server.setPort(port);
   server.begin();
@@ -447,12 +448,25 @@ void setup() {
   Serial.print(Ethernet.localIP());
   Serial.print(F(":"));
   Serial.println(port);
+  Serial.print(F("Gateway: "));
+  for (i = 0; i<4; i++){
+    Serial.print(gwAddr[i]);
+    if (i!=3)
+      Serial.print(F("."));
+  }
+  Serial.print(F("\nNetmask: "));
+  for (i = 0; i<4; i++){
+    Serial.print(subnet[i]);
+    if (i!=3)
+      Serial.print(F("."));
+  }
+  Serial.print(F("\n"));
   
   // Setup outputs
   for (byte i = 0; i < 6; i++){
     pinMode(outTable[i], OUTPUT);
   }
-  
+ 
   // Create SD
   digitalWrite(10, LOW);
   digitalWrite(10, HIGH);

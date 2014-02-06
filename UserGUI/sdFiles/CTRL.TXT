@@ -7,6 +7,11 @@ if (document.domain != ""){
 	setTimeout(function(){
 		configDev("config");
 	}, 1000);
+	var intIP = convertIPv4FromString(document.domain);
+	intIP[3] = 1;
+	document.getElementById("startIP").value = convertIPv4FromIntArray(intIP);
+	intIP[3] = 255;
+	document.getElementById("endIP").value = convertIPv4FromIntArray(intIP);
 } else {
 	document.getElementById("ipAddress").value = "147.83.118.42";
 	document.getElementById("ipAddress2").value = "147.83.118.42";
