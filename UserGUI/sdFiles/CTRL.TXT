@@ -378,7 +378,7 @@ function nextDiscover (){
 	discoveryIpCurrent = addOneIPv4(discoveryIpCurrent);
 	discoveryIndex = discoveryIndex + 1;
 	if (discoveryIndex<discoveryCount)
-		discoveryTimer = setTimeout(function(){ nextDiscover();}, 1000);
+		discoveryTimer = setTimeout(function(){ nextDiscover();}, 400);
 }
 
 /******************************************************
@@ -426,7 +426,7 @@ function ping(ip, callback) {
         this.ip = ip;
         var _that = this;
         this.xhr = createCORSRequest("GET", "http://" + ip + "/config");
-		this.xhr.timeout = 5000;
+		this.xhr.timeout = 1000;
         
         this.xhr.onload = function () {
             _that.inUse = false;
@@ -538,8 +538,8 @@ if (document.domain != ""){
 	intIP[3] = 255;
 	document.getElementById("endIP").value = convertIPv4FromIntArray(intIP);
 } else {
-	document.getElementById("ipAddress").value = "147.83.118.42";
-	document.getElementById("ipAddress2").value = "147.83.118.42";
+	document.getElementById("ipAddress").value = "192.168.10.1";
+	document.getElementById("ipAddress2").value = "192.168.10.20";
 	var intIP = convertIPv4FromString(location.host);
 	intIP[3] = 1;
 	document.getElementById("startIP").value = convertIPv4FromIntArray(intIP);
