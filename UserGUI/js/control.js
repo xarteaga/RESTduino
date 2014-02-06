@@ -1,31 +1,4 @@
 /******************************************************
- *                   INITIALIZE FORM                  *
- ******************************************************/
-if (document.domain != ""){
-	document.getElementById("ipAddress").value = document.domain;
-	document.getElementById("ipAddress2").value = document.domain;
-	setTimeout(function(){
-		configDev("config");
-	}, 1000);
-	var intIP = convertIPv4FromString(document.domain);
-	intIP[3] = 1;
-	document.getElementById("startIP").value = convertIPv4FromIntArray(intIP);
-	intIP[3] = 255;
-	document.getElementById("endIP").value = convertIPv4FromIntArray(intIP);
-} else {
-	document.getElementById("ipAddress").value = "147.83.118.42";
-	document.getElementById("ipAddress2").value = "147.83.118.42";
-	var intIP = convertIPv4FromString(location.host);
-	intIP[3] = 1;
-	document.getElementById("startIP").value = convertIPv4FromIntArray(intIP);
-	intIP[3] = 255;
-	document.getElementById("endIP").value = convertIPv4FromIntArray(intIP);
-	setTimeout(function(){
-		configDev("config");
-	}, 1000);
-}
-
-/******************************************************
  *              CONFIGURE Arduino Port                *
  ******************************************************/
 function configurePort(portId, type){
@@ -387,9 +360,9 @@ function nextDiscover (){
 		progressbar.setAttribute("percent", percent);
 		progressbar.setAttribute("style", "width: " + percent + "%");
 		progresslbl.innerHTML = Math.round(percent) + "% Complete";
-		if (status == "arduino"){
+		if (status == "success"){
 			label = "<span class=\"label " + "label-success"+"\">"+"Online Arduino"+"</span>";
-		} else if (status == "server"){
+		} else if (status == "error"){
 			label = "<span class=\"label " + "label-warning"+"\">"+"Other Device"+"</span>";
 		} else if (status == "aborted" && document.getElementById("showOffline").checked == true){
 			label = "<span class=\"label " + "label-danger"+"\">"+"Aborted Request!"+"</span>";
@@ -405,7 +378,7 @@ function nextDiscover (){
 	discoveryIpCurrent = addOneIPv4(discoveryIpCurrent);
 	discoveryIndex = discoveryIndex + 1;
 	if (discoveryIndex<discoveryCount)
-		discoveryTimer = setTimeout(function(){ nextDiscover();}, 1000);
+		discoveryTimer = setTimeout(function(){ nextDiscover();}, 400);
 }
 
 /******************************************************
@@ -453,31 +426,33 @@ function ping(ip, callback) {
         this.ip = ip;
         var _that = this;
         this.xhr = createCORSRequest("GET", "http://" + ip + "/config");
-		this.xhr.timeout = 5000;
+		this.xhr.timeout = 1000;
+        
         this.xhr.onload = function () {
             _that.inUse = false;
-            _that.callback(_that.ip, 'arduino');
-
+            _that.callback(_that.ip, 'success');
         };
+        
         this.xhr.onerror = function (e) {
             if (_that.inUse) {
                 _that.inUse = false;
-                _that.callback(_that.ip, 'server', e);
+                _that.callback(_that.ip, 'error', e);
             }
         };
+        
         this.xhr.ontimeout = function () {
-			if (_that.inUse) {
-				_that.inUse = false;
-				_that.callback(_that.ip, 'timeout', 'timeout');
-			}
-		};
-		this.xhr.onabort = function () {
-			if (_that.inUse) {
-				_that.inUse = false;
-				_that.callback(_that.ip, 'computer', 'computer');
-			}
-		};
-		this.xhr.send();
+		if (_that.inUse) {
+			_that.inUse = false;
+			_that.callback(_that.ip, 'timeout', 'timeout');
+		}
+	};
+        this.xhr.onabort = function () {
+		if (_that.inUse) {
+			_that.inUse = false;
+			_that.callback(_that.ip, 'abort', 'computer');
+		}
+	};
+	this.xhr.send();
     }
 }
 
@@ -516,21 +491,25 @@ function ping(ip, callback) {
 	var config = JSON.parse(txtConfig);
 	document.getElementById("devName").innerHTML = config.deviceName.replace("_", " ").replace("%20", " ");
 	switch(config.ip){
-		case "0":
-			document.getElementById("setNewIp").innerHTML = "192.168.10.2:80/24 <span class='caret'></span>";
-			document.getElementById("setNewIp").value = "192.168.10.2";
-			break;
 		case "1":
 			document.getElementById("setNewIp").innerHTML = "192.168.10.130:8080/26 <span class='caret'></span>";
-			document.getElementById("setNewIp").value = "192.168.10.130";
+			if(document.getElementById("setNewIp").value == "")
+			        document.getElementById("setNewIp").value = "192.168.10.130";
 			break;
 		case "2":
 			document.getElementById("setNewIp").innerHTML = "10.0.1.2:80/24 <span class='caret'></span>";
-			document.getElementById("setNewIp").value = "10.0.1.2";
+			if(document.getElementById("setNewIp").value == "") 
+        			document.getElementById("setNewIp").value = "10.0.1.2";
+			break;
+		case "3":
+			document.getElementById("setNewIp").innerHTML = "10.0.1.130:8080/26 <span class='caret'></span>";
+			if(document.getElementById("setNewIp").value == "") 
+	        		document.getElementById("setNewIp").value = "10.0.1.130";
 			break;
 		default:
-			document.getElementById("setNewIp").innerHTML = "10.0.1.130:8080/26 <span class='caret'></span>";
-			document.getElementById("setNewIp").value = "10.0.1.130";
+			document.getElementById("setNewIp").innerHTML = "192.168.10.2:80/24 <span class='caret'></span>";
+			if(document.getElementById("setNewIp").value == "") 
+        			document.getElementById("setNewIp").value = "192.168.10.2";
 			break;
 	}
 	
@@ -543,3 +522,31 @@ function ping(ip, callback) {
 		configDevice("out" + (i-6), type);
 	}
  }
+
+/******************************************************
+ *                   INITIALIZE FORM                  *
+ ******************************************************/
+if (document.domain != ""){
+	document.getElementById("ipAddress").value = document.domain;
+	document.getElementById("ipAddress2").value = document.domain;
+	setTimeout(function(){
+		configDev("config");
+	}, 1000);
+	var intIP = convertIPv4FromString(document.domain);
+	intIP[3] = 1;
+	document.getElementById("startIP").value = convertIPv4FromIntArray(intIP);
+	intIP[3] = 255;
+	document.getElementById("endIP").value = convertIPv4FromIntArray(intIP);
+} else {
+	document.getElementById("ipAddress").value = "192.168.10.1";
+	document.getElementById("ipAddress2").value = "192.168.10.20";
+	var intIP = convertIPv4FromString(location.host);
+	intIP[3] = 1;
+	document.getElementById("startIP").value = convertIPv4FromIntArray(intIP);
+	intIP[3] = 255;
+	document.getElementById("endIP").value = convertIPv4FromIntArray(intIP);
+	setTimeout(function(){
+		configDev("config");
+	}, 1000);
+}
+

@@ -362,25 +362,7 @@ void setup() {
   byte i;
   uint16_t port = 0;
   
-    if (conf.ip == 0){ /* --- NETWORK CONFIGURATION 0 --- */
-    // Ip Address 192.168.10.2
-    ipAddr[0] = 192;
-    ipAddr[1] = 168;
-    ipAddr[2] = 10;
-    ipAddr[3] = 2;
-    // Gateway Address 192.168.10.1
-    gwAddr[0] = 192;
-    gwAddr[1] = 168;
-    gwAddr[2] = 10;
-    gwAddr[3] = 1;
-    // Subnet Mask 255.255.255.0 (/24)
-    subnet[0] = 255;
-    subnet[1] = 255;
-    subnet[2] = 255;
-    subnet[3] = 0;
-    // Port 80
-    port = 80;
-  } else if (conf.ip==1){ /* --- NETWORK CONFIGURATION 1 --- */
+  if (conf.ip==1){ /* --- NETWORK CONFIGURATION 1 --- */
     // Ip Address 192.168.10.130
     ipAddr[0] = 192;
     ipAddr[1] = 168;
@@ -434,7 +416,26 @@ void setup() {
     subnet[3] = 192;
     // Port 8080
     port = 8080;
+  } else { /* --- NETWORK CONFIGURATION 0 --- */
+    // Ip Address 192.168.10.2
+    ipAddr[0] = 192;
+    ipAddr[1] = 168;
+    ipAddr[2] = 10;
+    ipAddr[3] = 2;
+    // Gateway Address 192.168.10.1
+    gwAddr[0] = 192;
+    gwAddr[1] = 168;
+    gwAddr[2] = 10;
+    gwAddr[3] = 1;
+    // Subnet Mask 255.255.255.0 (/24)
+    subnet[0] = 255;
+    subnet[1] = 255;
+    subnet[2] = 255;
+    subnet[3] = 0;
+    // Port 80
+    port = 80;
   } 
+  
   // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
   byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };

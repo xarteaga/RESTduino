@@ -126,16 +126,19 @@
 				<form>
 					<label>New name for the device</label>
 					<div class='btn-group'>
-						<button id='setNewIp' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>
+						<button id='setNewIp' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'
+						value=''>
 							New IP <span class='caret'></span>
 						</button>
 						<ul class='dropdown-menu'>
-							<li><a type="button" onclick='configDevProtected("set/a0")'>192.168.10.2/24:80 </a></li>
 							<li><a type="button"
-							onclick='configDevProtected("set/a1")'>192.168.10.130/26:8080 </a></li>
-							<li><a type="button" onclick='configDevProtected("set/a2")'>10.0.1.2/24:80 </a></li>
+							onclick='configDevProtected("set/a0")'>192.168.10.2:80/24 </a></li>
 							<li><a type="button"
-							onclick='configDevProtected("set/a3")'>10.0.1.130/26:8080 </a></li>
+							onclick='configDevProtected("set/a1")'>192.168.10.130:8080/26 </a></li>
+							<li><a type="button"
+							onclick='configDevProtected("set/a2")'>10.0.1.2:80/24 </a></li>
+							<li><a type="button"
+							onclick='configDevProtected("set/a3")'>10.0.1.130:8080/26 </a></li>
 						</ul>
 					</div>
 				</form>
