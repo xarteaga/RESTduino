@@ -2,7 +2,7 @@
 #define SERIAL_BAUDRATE 115200
 #define REQUEST_MAXBUFFER 30
 #define HEADER_MAXBUFFER 20
-
+#define DEV_NAME_MAX_LEN 16
 // Compilation options
 //#define DEBUG_EEPROM
 //#define DEBUG
@@ -58,14 +58,14 @@ struct Configuration{
   char inputs [6];
   char outputs [6];
   byte ip;
-  char devName[16];
+  char devName[DEV_NAME_MAX_LEN];
 };
 Configuration conf;
 
 /*****************************************************************************************************
  *                                            Request Read                                           *
  *****************************************************************************************************/
-byte requestRead (EthernetClient client) {
+byte requestRead () {
   char header [HEADER_MAXBUFFER];
   boolean currentLineIsBlank = true;
   boolean firstLine = true;
@@ -236,16 +236,16 @@ void portsRequested (){
       basePot[18] = (i!=5)? ',':']';
       client.print(basePot);
     } else if (type == _LIGHT) {
-        raw = raw >> 1;
-        baseRaw[0] = (i==0)?'[':' ';
-        baseRaw[12] = 0x30 + raw%10;
-        raw /= 10;
-        baseRaw[11] = 0x30 + raw%10;
-        raw /= 10;
-        baseRaw[10] = 0x30 + raw%10;
-        baseRaw[9] = 0x30 + raw/10;
-        baseRaw[15] = (i!=5) ? ',':']';
-        client.print(baseRaw);
+      raw = raw >> 1;
+      baseRaw[0] = (i==0)?'[':' ';
+      baseRaw[12] = 0x30 + raw%10;
+      raw /= 10;
+      baseRaw[11] = 0x30 + raw%10;
+      raw /= 10;
+      baseRaw[10] = 0x30 + raw%10;
+      baseRaw[9] = 0x30 + raw/10;
+      baseRaw[15] = (i!=5) ? ',':']';
+      client.print(baseRaw);
     } else if (type == _LOGICAL) {
       if (raw > 512){
         baseLogical1[0] = (i==0)?'[':' ';
@@ -349,6 +349,30 @@ void setup() {
   byte* confptr = (byte*)&conf;
   for (byte i=0; i<sizeof(Configuration); i++){
     confptr[i] = EEPROM.read(_EEPROM_BASE + i);
+  }
+  
+  // Check the device name and configuration
+  char *devName = conf.devName;
+  for (byte i=0; i<DEV_NAME_MAX_LEN; i++){
+      if (devName[i]<48 || devName[i]>122){
+        if (devName[i]==0 && i!=0)
+          break;
+        else{
+          devName[0] = 'W';
+          devName[1] = 'e';
+          devName[2] = 'b';
+          devName[3] = 'd';
+          devName[4] = 'u';
+          devName[5] = 'i';
+          devName[6] = 'n';
+          devName[7] = 'o';
+          devName[8] = 0;
+          for (byte j = 0; i<9; i++){
+            EEPROM.write(_EEPROM_BASE + 13 + j, conf.devName[j]);
+          }
+          break;
+        }
+      }
   }
 
   /* Uncomment next line to reset network Addr */
@@ -491,7 +515,7 @@ void loop() {
     return;
     
   Serial.println(F("--- Begin of the Request ---"));
-  byte headers = requestRead(client);
+  byte headers = requestRead();
   if ((headers & _REQ_OK) == 0)
     return;
   

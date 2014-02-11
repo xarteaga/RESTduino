@@ -24,3 +24,5 @@
 
 # Unix Backups
 *~
+UserGUI/.idea/
+*.iml
