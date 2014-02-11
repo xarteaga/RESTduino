@@ -223,7 +223,7 @@ function configDevProtected(sufix){
 function configDev(sufix){
 	var res = document.getElementById("ipAddress").value.split(":");
 	var ipAddr = res[0];;
-	var port = location.port;
+	var port = 80;
 
 	// Check if IP address is valid
 	if (!validateIPv4(ipAddr)){
@@ -277,14 +277,14 @@ function configDev(sufix){
  function stopAutoRead(){
 	clearInterval(timer);
 	timer = null;
-	document.getElementById("startStopButtons").innerHTML = "<button type='button' class='btn btn-success' onclick='startAutoRead()'>Start</button><button type='button' class='btn btn-deault'>Stop</button>";
+	document.getElementById("startStopButtons").innerHTML = "<button type='button' class='btn btn-success' onclick='startAutoRead()'>Start</button><button type='button' class='btn btn-default'>Stop</button>";
  }
 
 function readValues(){
 	var res = document.getElementById("ipAddress2").value.split(":");
 	var ipAddr = res[0];
 	var port = 80;
-	if (res.length = 2){
+	if (res.length == 2){
 		port = res[1];
 	}
 	var responseText = null;	
@@ -343,6 +343,7 @@ function setOutput(code) {
 /******************************************************
  *              DEVICE DISCOVERY FUNCTION             *
  ******************************************************/
+var discoveryContinue;
 var discoveryCount;
 var discoveryIndex;
 var discoveryIpCurrent;
@@ -377,14 +378,16 @@ function nextDiscover (){
 	// Increment the IP address by one
 	discoveryIpCurrent = addOneIPv4(discoveryIpCurrent);
 	discoveryIndex = discoveryIndex + 1;
-	if (discoveryIndex<discoveryCount)
-		discoveryTimer = setTimeout(function(){ nextDiscover();}, 400);
+	if (discoveryIndex<discoveryCount && discoveryContinue==true)
+		discoveryTimer = setTimeout(function(){ nextDiscover();}, 200);
+	else
+	    stopDiscovery();
 }
 
 /******************************************************
  *              FIND DEVICE FUNCTION                  *
  ******************************************************/
-function findDevices () {
+function startDiscovery () {
 	var startAddr =  document.getElementById("startIP").value;
 	var stopAddr =  document.getElementById("endIP").value;
 	
@@ -411,7 +414,19 @@ function findDevices () {
 	progresslbl.innerHTML = (0) + "% Complete";
 	devicesTable.innerHTML = "";
 	discoveryIndex = 0;
-	nextDiscover();
+
+    var discCtrl = document.getElementById("scanCtrl");
+        discCtrl.innerHTML  = "<button type='button' class='btn btn-default' onclick='startDiscovery()'> Start </button>";
+        discCtrl.innerHTML += "<button type='button' class='btn btn-danger' onclick='stopDiscovery()'> Stop </button>";
+	discoveryContinue = true;
+    nextDiscover(); // First discovery
+}
+
+function stopDiscovery(){
+    discoveryContinue = false;
+    var discCtrl = document.getElementById("scanCtrl");
+        discCtrl.innerHTML  = "<button type='button' class='btn btn-success' onclick='startDiscovery()'> Start </button>";
+        discCtrl.innerHTML += "<button type='button' class='btn btn-default' onclick='stopDiscovery()'> Stop </button>";
 }
 
 /******************************************************
@@ -426,7 +441,7 @@ function ping(ip, callback) {
         this.ip = ip;
         var _that = this;
         this.xhr = createCORSRequest("GET", "http://" + ip + "/config");
-		this.xhr.timeout = 1000;
+		this.xhr.timeout = 400;
         
         this.xhr.onload = function () {
             _that.inUse = false;
