@@ -1,19 +1,7 @@
-BASEDIR=${PWD}/$(dirname $0)
-echo " Generating files for Arduino WebPage "
-echo "----------------------------------------------------------"
-echo "Current dir: ${BASEDIR%?}"
-echo "Copying the file 'bootstrap.min.css'"
-cp -v ${BASEDIR%?}/css/bootstrap.min.css ${BASEDIR%?}/sdFiles/BS.CSS;
-echo "Copying the file 'bootstrap-responsive.min.css'"
-cp ${BASEDIR%?}/css/bootstrap-responsive.min.css ${BASEDIR%?}/sdFiles/BSR.CSS;
-echo "Copying the file 'bootstrap.min.js'"
-cp ${BASEDIR%?}/js/bootstrap.min.js ${BASEDIR%?}/sdFiles/BSJS.TXT;
-echo "Copying the file 'control.js'"
-cp ${BASEDIR%?}/js/control.js ${BASEDIR%?}/sdFiles/CTRL.TXT;
-echo "Copying the file 'jquery.min.js'"
-cp ${BASEDIR%?}/js/jquery.min.js ${BASEDIR%?}/sdFiles/JQUERY.TXT;
-echo "Copying the file 'shield.txt'" 
-cp ${BASEDIR%?}/img/shield.txt ${BASEDIR%?}/sdFiles/SHIELD.TXT;
-echo "Copying the file 'index.html'"
-cp ${BASEDIR%?}/index.html ${BASEDIR%?}/sdFiles/INDEX.TXT;
-echo "----------------------------------------------------------"
+#!/bin/sh
+cp css/bootstrap-responsive.min.css sdFiles/BSR.CSS
+cp js/bootstrap.min.js sdFiles/BSJS.TXT
+java -jar yuicompressor.jar -v --type js -o sdFiles/CTRL.TXT js/control.js
+cp -v js/jquery.min.js sdFiles/JQUERY.TXT
+cp -v img/shield.txt sdFiles/SHIELD.TXT
+java -jar htmlcompressor.jar -t html --compress-js --compress-css --remove-quotes --remove-intertag-spaces -o sdFiles/INDEX.TXT index.html

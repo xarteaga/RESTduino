@@ -71,14 +71,15 @@
             <form onsubmit="event.preventDefault()">
                 <div class="form-group">
                     <label for="startIP">Start IP Address</label>
-                    <input type="text" class="form-control" id="startIP" value="147.83.118.1">
+                    <input type="text" class="form-control" id="startIP" value="192.168.10.1" onkeydown="if (event.keyCode==13) startDiscovery()">
                 </div>
                 <div class="form-group">
                     <label for="endIP">Stop IP Address</label>
-                    <input type="text" class="form-control" id="endIP" value="147.83.118.255">
+                    <input type="text" class="form-control" id="endIP" value="192.168.10.255" onkeydown="if (event.keyCode==13) startDiscovery()">
                 </div>
                 <div class="input-group">
-                    <label class="checkbox"><input type="checkbox" id="showOffline" value="__option__"> Show offline IP devices</label>
+                    <label class="checkbox"><input type="checkbox" id="showOffline" value="__option__"> Show offline IP
+                        devices</label>
                 </div>
                 <div id="scanCtrl">
                     <button type="button" class="btn btn-success" onclick="startDiscovery()">Start</button>
@@ -139,7 +140,7 @@ Device</span>).</p>
 <div id="confdev" class="tab-pane">
     <h2>Configure device IP and Name</h2>
 
-    <form><label>New name for the device</label>
+    <form onsubmit="event.preventDefault()"><label>New name for the device</label>
 
         <div class='btn-group'>
             <button id='setNewIp' data-toggle='dropdown'
@@ -158,7 +159,7 @@ Device</span>).</p>
             </ul>
         </div>
     </form>
-    <form onsubmit="configDevProtected('set/n' + document.getElementById('newName').value.replace(' ', '_'))">
+    <form onsubmit="event.preventDefault(); configDevProtected('set/n' + document.getElementById('newName').value.replace(' ', '_'))">
         <div class="form-group input-append"><label for="newName">New name
             for the device</label> <input type="text" class="form-control" id=
                 "newName" placeholder="My Arduino">
@@ -171,16 +172,13 @@ Device</span>).</p>
     <div class="well">
         <h3>Tips</h3>
 
-        <p>Configure your LOCAL Arduino server IP address. You only can
-            choose among a limited number of IP addresses. After selecting a
-            new IP Address you must reset your Arduino board in order to
-            enforce the new IP address and configure your PC with an IP
-            belonging to the new IP address range. The mask is always
-            255.255.255.0.</p>
+        <p>Configure your LOCAL Arduino server IP address. You only can choose among a limited number of IP addresses.
+            After selecting a new IP Address you must reset your Arduino board in order to enforce the new IP address
+            and configure your PC with an IP belonging to the new IP address range. The mask is always 255.255.255.0.
+        </p>
 
-        <p>You can also change your LOCAL Arduino name or identifier by
-            writing a new name (shorter than 15 characters) and clicking
-            "Change name".</p>
+        <p>You can also change your LOCAL Arduino name or identifier by writing a new name (shorter than 15 characters)
+            and clicking "Change name".</p>
     </div>
 </div>
 <div id="confports" class="tab-pane">
@@ -196,24 +194,26 @@ Device</span>).</p>
     <div class="row-fluid">
         <div class="span2 offset2"><br>
             <br>
-            <form id="inputs" align="center">
+
+            <form id="inputs" align="center" onsubmit="event.preventDefault()">
                 <script type="text/javascript">
                     for (var i = 0; i < 6; i++) {
                         document.write("<div class='btn-group'>");
                         document.write("<button id='an" + i + "' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>Empty <span class='caret'><\/span><\/button>");
                         document.write("<ul class='dropdown-menu'>");
-                        document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Raw\")'>Raw<\/a><\/li>");
-                        document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Temperature\")'>Temperature<\/a><\/li>");
-                        document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Potentiometer\")'>Potentiometer<\/a><\/li>");
-                        document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Light\")'>Light<\/a><\/li>");
-                        document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Logical\")'>Logical<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\"set/i" + i + "r\")'>Raw<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\"set/i" + i + "t\")'>Temperature<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\"set/i" + i + "p\")'>Potentiometer<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\"set/i" + i + "l\")'>Light<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\"set/i" + i + "b\")'>Logical<\/a><\/li>");
                         document.write("<li class='divider'><\/li>");
-                        document.write("<li><a onclick='configurePort(\"an" + i + "\", \"Empty\")'>Empty<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\"set/i" + i + "e\")'>Empty<\/a><\/li>");
                         document.write("<\/ul>");
                         document.write("<\/div>");
                         document.write("<br><br>")
                     }
                     ;
+
                 </script>
             </form>
         </div>
@@ -227,6 +227,7 @@ Device</span>).</p>
                 }
                 ;
 
+
             </script>
         </div>
         <div class="span2"><br>
@@ -238,9 +239,9 @@ Device</span>).</p>
                         document.write("<div class='btn-group'>");
                         document.write("<button id='out" + i + "' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>Empty <span class='caret'><\/span><\/button>");
                         document.write("<ul class='dropdown-menu'>");
-                        document.write("<li><a onclick='configurePort(\"out" + i + "\", \"Logical\")'>Logical<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\"set/o" + i + "b\")'>Logical<\/a><\/li>");
                         document.write("<li class='divider'><\/li>");
-                        document.write("<li><a onclick='configurePort(\"out" + i + "\", \"Empty\")'>Empty<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\"set/o" + i + "e\")'>Empty<\/a><\/li>");
                         document.write("<\/ul>");
                         document.write("<\/div>");
                         document.write("<br><br>")
@@ -254,23 +255,34 @@ Device</span>).</p>
     <div class="well">
         <h3>Tips</h3>
 
-        <p>Select an Arduino in the network by typing its IP. Click "Connect" to load its configuration. If the Arduino IP is on your local network you can configure the input ports by clicking on the buttons and selecting the type of input.</p>
+        <p>Select an Arduino in the network by typing its IP. Click "Connect" to load its configuration. If the Arduino
+            IP is on your local network you can configure the input ports by clicking on the buttons and selecting the
+            type of input.</p>
+
         <p>In case of leaving an input or output unconnected, select the "Void" option.</p>
 
-        <p><span class="label label-warning">Warning</span> Never connect anything to the outputs "O0" or "O1". They are reserved for Arduino internal usage.</p>
+        <p><span class="label label-warning">Warning</span> Never connect anything to the outputs "O0" or "O1". They are
+            reserved for Arduino internal usage.</p>
 
         <h4>Port Types</h4>
-        <p><span class="label label-info">Void</span> This port type shows the raw value read by the Arduino A/D converter. The value is represented as a 10 bit unsigned integer, from 0 to 1023.</p>
-        <p><span class="label btn-danger">Temperature</span> This port type shows the temperature read from a thermistor connected at an analog input. The value is represented in Celsius degrees with
+
+        <p><span class="label label-info">Void</span> This port type shows the raw value read by the Arduino A/D
+            converter. The value is represented as a 10 bit unsigned integer, from 0 to 1023.</p>
+
+        <p><span class="label btn-danger">Temperature</span> This port type shows the temperature read from a thermistor
+            connected at an analog input. The value is represented in Celsius degrees with
             a precision of one decimal digit.</p>
 
-        <p><span class="label label-success">Potentiometer</span> This port type shows the rotation angle of a potentiometer connected at an analog input. The value is represented as a percentage with a
+        <p><span class="label label-success">Potentiometer</span> This port type shows the rotation angle of a
+            potentiometer connected at an analog input. The value is represented as a percentage with a
             precision of one decimal digit.</p>
 
-        <p><span class="label label-warning">Light</span> This port type shows a measure of the illumination level of a LDR connected at an analog input. The value is represented as a 10 bit unsigned
+        <p><span class="label label-warning">Light</span> This port type shows a measure of the illumination level of a
+            LDR connected at an analog input. The value is represented as a 10 bit unsigned
             integer, from 0 to 1023 (raw value)</p>
 
-        <p><span class="label btn-primary">Logical</span> This port type shows the logical level read from a switch connected at a digital input. The value is represented with using logical states: True
+        <p><span class="label btn-primary">Logical</span> This port type shows the logical level read from a switch
+            connected at a digital input. The value is represented with using logical states: True
             (On) or False (Off).</p>
     </div>
 </div>
@@ -279,14 +291,14 @@ Device</span>).</p>
 
     <div class="row-fluid">
         <div class="span4">
-            <form>
+            <form onsubmit="event.preventDefault(); startAutoRead()">
                 <div class="form-group input-append">
                     <label for="ipAddress2">IP Address of the device</label>
-                    <input type="text" class="form-control" id="ipAddress2">
+                    <input type="text" class="form-control" id="ipAddress2" onkeydown="if (event.keyCode == 13) startAutoRead()">
                 </div>
                 <div class="form-group">
                     <label for="refreshTime">Refresh time [s]</label>
-                    <input type="number" class="form-control" id="refreshTime" value="5">
+                    <input type="number" class="form-control" id="refreshTime" value="5" onkeydown="if (event.keyCode == 13) startAutoRead()">
                 </div>
                 <div id="startStopButtons">
                     <button id="startRead" type="button"
@@ -358,23 +370,47 @@ Device</span>).</p>
 </div>
 <hr>
 <p>Developed by X. Arteaga, 2013</p>
+
 <script type="text/javascript">
-    var closeScript = "<_/script>";
-    closeScript = closeScript.replace("_", "");
-    if (document.domain == "" || document.domain == "localhost") {
-        document.write("<script type='text/javascript' src='./js/jquery.min.js'>" + closeScript);
-        document.write("<script type='text/javascript' src='./js/bootstrap.min.js'>" + closeScript);
-        document.write("<script type='text/javascript' src='./js/control.js'>" + closeScript);
-        document.getElementById("ipAddress").value = "192.168.10.2";
-        document.getElementById("ipAddress2").value = "192.168.10.2"
-    } else {
-        document.write("<script type='text/javascript' src='jquery.js'>" + closeScript);
-        document.write("<script type='text/javascript' src='bs.js'>" + closeScript);
-        document.write("<script type='text/javascript' src='control.js'>" + closeScript);
+
+    function asyncLoadScript(url) {
+        var tag = document.createElement("script");
+        tag.type = "text/javascript";
+        tag.src = url;
+        tag.async = false;
+        document.getElementsByTagName('head')[0].appendChild(tag);
+    }
+
+    function syncLoadScript(url) {
+        var se = document.createElement('script');
+        se.type = 'text/javascript';
+        se.text = $.ajax({type: "GET", url: url, async: false}).responseText;
+        document.getElementsByTagName("head")[0].appendChild(se);
+    }
+
+    function wait4load() {
+        if (typeof $ === 'undefined') {
+            setTimeout(function () {
+                wait4load();
+            }, 100);
+            return;
+        }
+        syncLoadScript('bs.js');
+        syncLoadScript('control.js');
         document.getElementById("ipAddress").value = document.domain;
-        document.getElementById("ipAddress2").value = document.domain
+        document.getElementById("ipAddress2").value = document.domain;
+    }
+
+    if (document.domain == "" || document.domain == "localhost") {
+        asyncLoadScript('./js/jquery.min.js');
+        asyncLoadScript('./js/bootstrap.min.js');
+        asyncLoadScript('./js/control.js');
+    } else {
+        asyncLoadScript('jquery.js');
+        wait4load();
     }
     ;
+
 
 </script>
 </body>
