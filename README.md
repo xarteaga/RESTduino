@@ -3,7 +3,9 @@ This repository provide a base for an Arduino REST application engine.
 It has a REST server skeleton where you can configure and read multiple
 sensors connected in your Arduino.
 
-<h2>Intructions for use it</h2>
+The platform is based for [Arduino Ethernet board]{http://arduino.cc/en/Main/ArduinoBoardEthernet}.
+
+<h2>Intructions for use it (out-dated)</h2>
 <ol>
 	<li>Download the files and uncompress</li>
 	<li>Generate the SD files executing the batch script "generateSDdata.bat"
@@ -33,3 +35,10 @@ sensors connected in your Arduino.
 		Hack and Enjoy ;)
 	</li>
 </ol>
+
+<h2>Current status</h2>
+The sensor platform is already running. It has been improved inperformance as much as possible
+(without programm hardware).
+
+By now the code is being improved (robust way). Also, It being developed a remote server in Node.JS for
+manage the sensor values (logic tier).
