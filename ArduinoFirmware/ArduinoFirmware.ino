@@ -1,7 +1,7 @@
 // Definitions
 #define SERIAL_BAUDRATE 115200
 #define REQUEST_MAXBUFFER 30
-#define HEADER_MAXBUFFER 20
+#define HEADER_MAXBUFFER 50
 #define DEV_NAME_MAX_LEN 16
 // Compilation options
 //#define DEBUG_EEPROM
@@ -100,8 +100,11 @@ byte requestRead () {
       Serial.print(header);
       #endif // PRINT_HEADERS
       #ifdef ALLOW_CACHE
-      if (strncmp(header, "If-None-Match", 5)==0){
+      if ((strncmp(header, "If-None-Match: contentNotModified", 23)==0 ||
+            strncmp(header, "Cache-Control: max-age=0",23)==0) &&
+            (val & _NOT_MODIFIED) == 0){
         val += _NOT_MODIFIED;
+        Serial.println(F("NO MODIFIED DETECTED!"));
       }
       #endif // ALLOW_CACHE
     }
@@ -127,38 +130,48 @@ byte requestRead () {
  *                                          Configure Arduino                                        *
  *****************************************************************************************************/
 void configure (char* code){
-  byte nport, type, codelen;
+  byte nport, type;
   char inout;
+  
+  // Mode the pointer to the begining of the configuration code
   code ++;
   while(*code != '/')
     code ++;
   code ++;
 
-  inout = code[0];
-  nport = code[1] - 0x30;
-  type = code[2];
-  if (inout == _INPUT){
-    if (nport > 5) return;
-    conf.inputs[nport] = type;
-    EEPROM.write(_EEPROM_BASE + nport, type);
-  } else if (inout == _OUTPUT){
-    if (nport > 5) return;
-    conf.outputs[nport] = type;
-    EEPROM.write(_EEPROM_BASE + nport + 6, type);
-  } else if (inout == _NAME) {
-    code ++;
-    codelen = 0;
-    for (byte i = 0; i<16 && code[i]!=' '; i++)
-      codelen++;
-    strncpy(conf.devName, code, codelen);
-    conf.devName[codelen] = '\0';
-    for (byte i = 0; i<codelen+1; i++){
-      EEPROM.write(_EEPROM_BASE + 13 + i, conf.devName[i]);
-    }
-  } else if (inout == _ADDR){
-    code ++;
-    conf.ip = *code - 0x30;
-    EEPROM.write(_EEPROM_BASE + 12, conf.ip);
+  inout = code[0];        // Get the type of port: input, output or device name
+  nport = code[1] - 0x30; // Get the port number (if any)
+  type = code[2];         // Get port configuration
+  
+  switch(inout){
+    case _INPUT:
+      if (nport > 5) return;  // If not valid value, return
+      conf.inputs[nport] = type;
+      EEPROM.write(_EEPROM_BASE + nport, type);
+      break;
+    case _OUTPUT:
+      if (nport > 5) return;  // If not valid value, return
+      conf.outputs[nport] = type;
+      EEPROM.write(_EEPROM_BASE + nport + 6, type);
+      break;
+    case _NAME:
+      byte devNameLen; // Declare the device name length
+      code ++; // Adjust config code pointer
+      /* Look for the end of the name, in case of being longer then DEV_NAME_MAX_LEN-1
+       * it will be cut to this number. */
+      for (devNameLen = 0; devNameLen<DEV_NAME_MAX_LEN-1 && code[devNameLen]!=' '; devNameLen++);
+      // Copy the Device name in the config structure
+      strncpy(conf.devName, code, devNameLen);
+      conf.devName[devNameLen] = '\0';  // End wil the end string (null) char
+      // Copy the device name in the EEPROM
+      for (byte i = 0; i<devNameLen; i++)
+        EEPROM.write(_EEPROM_BASE + 13 + i, conf.devName[i]);
+      break;
+    case _ADDR:
+      code ++;
+      conf.ip = *code - 0x30;
+      EEPROM.write(_EEPROM_BASE + 12, conf.ip);
+      break;
   }
 }
 
