@@ -159,12 +159,11 @@ Device</span>).</p>
             </ul>
         </div>
     </form>
-    <form onsubmit="event.preventDefault(); configDevProtected('set/n' + document.getElementById('newName').value.replace(' ', '_'))">
+    <form onsubmit="event.preventDefault(); configDevProtected('set/n' + document.getElementById('newName').value.replace(' ', '_').substring(0,15))">
         <div class="form-group input-append"><label for="newName">New name
             for the device</label> <input type="text" class="form-control" id=
                 "newName" placeholder="My Arduino">
-            <button type="button" class="btn btn-info"
-                    onclick="configDevProtected('set/n' + document.getElementById('newName').value.replace(' ', '_'))">
+            <button type="button submit" class="btn btn-info">
                 Change Name
             </button>
         </div>
@@ -199,7 +198,7 @@ Device</span>).</p>
                 <script type="text/javascript">
                     for (var i = 0; i < 6; i++) {
                         document.write("<div class='btn-group'>");
-                        document.write("<button id='an" + i + "' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>Empty <span class='caret'><\/span><\/button>");
+                        document.write("<button id='an" + i + "' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>Void <span class='caret'><\/span><\/button>");
                         document.write("<ul class='dropdown-menu'>");
                         document.write("<li><a onclick='configDevProtected(\"set/i" + i + "r\")'>Raw<\/a><\/li>");
                         document.write("<li><a onclick='configDevProtected(\"set/i" + i + "t\")'>Temperature<\/a><\/li>");
@@ -207,7 +206,7 @@ Device</span>).</p>
                         document.write("<li><a onclick='configDevProtected(\"set/i" + i + "l\")'>Light<\/a><\/li>");
                         document.write("<li><a onclick='configDevProtected(\"set/i" + i + "b\")'>Logical<\/a><\/li>");
                         document.write("<li class='divider'><\/li>");
-                        document.write("<li><a onclick='configDevProtected(\'set/i" + i + "e\')'>Empty<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\'set/i" + i + "e\')'>Void<\/a><\/li>");
                         document.write("<\/ul>");
                         document.write("<\/div>");
                         document.write("<br><br>")
@@ -237,11 +236,11 @@ Device</span>).</p>
                 <script type="text/javascript">
                     for (var i = 0; i < 6; i++) {
                         document.write("<div class='btn-group'>");
-                        document.write("<button id='out" + i + "' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>Empty <span class='caret'><\/span><\/button>");
+                        document.write("<button id='out" + i + "' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>Void <span class='caret'><\/span><\/button>");
                         document.write("<ul class='dropdown-menu'>");
                         document.write("<li><a onclick='configDevProtected(\"set/o" + i + "b\")'>Logical<\/a><\/li>");
                         document.write("<li class='divider'><\/li>");
-                        document.write("<li><a onclick='configDevProtected(\"set/o" + i + "e\")'>Empty<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\"set/o" + i + "e\")'>Void<\/a><\/li>");
                         document.write("<\/ul>");
                         document.write("<\/div>");
                         document.write("<br><br>")
@@ -266,7 +265,7 @@ Device</span>).</p>
 
         <h4>Port Types</h4>
 
-        <p><span class="label label-info">Void</span> This port type shows the raw value read by the Arduino A/D
+        <p><span class="label label-info">Raw</span> This port type shows the raw value read by the Arduino A/D
             converter. The value is represented as a 10 bit unsigned integer, from 0 to 1023.</p>
 
         <p><span class="label btn-danger">Temperature</span> This port type shows the temperature read from a thermistor
@@ -324,7 +323,7 @@ Device</span>).</p>
                 <tbody id="analogReads">
                 <tr>
                     <td>...</td>
-                    <td align="center">Empty</td>
+                    <td align="center">Void</td>
                 </tr>
                 </tbody>
             </table>
@@ -341,7 +340,7 @@ Device</span>).</p>
                 <tbody id="actuators">
                 <tr>
                     <td>...</td>
-                    <td align="center">Empty</td>
+                    <td align="center">Void</td>
                 </tr>
                 </tbody>
             </table>
