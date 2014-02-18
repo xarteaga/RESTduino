@@ -156,9 +156,7 @@ function configDevProtected(path) {
     }
 
     // Create request and check if the navigation browser is valid
-    $.ajax({
-        url:path
-    }).done(function(data){
+    $.get(path).done(function(data){
         showConfig(data);
     });
 }
@@ -427,7 +425,11 @@ function ping(ip, callback) {
  *                  Update PORT states                *
  ******************************************************/
 function showPorts(txtPort) {
-    values = JSON.parse(txtPort);
+    if (txtPort!="object")
+        values = JSON.parse(txtPort);
+    else
+        values = txtPort;
+
     table = document.getElementById("analogReads");
     document.getElementById("devName2").innerHTML = values.deviceName.replace("_", " ").replace("%20", " ");
     table.innerHTML = "";
@@ -455,7 +457,11 @@ function showPorts(txtPort) {
  *                     Update CONFIG                  *
  ******************************************************/
 function showConfig(txtConfig) {
-    var config = JSON.parse(txtConfig);
+    if (typeof(txtConfig) != "object")
+        config = JSON.parse(txtConfig);
+    else
+        config = txtConfig;
+
     document.getElementById("devName").innerHTML = config.deviceName.replace("_", " ").replace("%20", " ");
     switch (config.ip) {
         case "1":

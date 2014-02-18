@@ -207,7 +207,7 @@ Device</span>).</p>
                         document.write("<li><a onclick='configDevProtected(\"set/i" + i + "l\")'>Light<\/a><\/li>");
                         document.write("<li><a onclick='configDevProtected(\"set/i" + i + "b\")'>Logical<\/a><\/li>");
                         document.write("<li class='divider'><\/li>");
-                        document.write("<li><a onclick='configDevProtected(\"set/i" + i + "e\")'>Empty<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\'set/i" + i + "e\')'>Empty<\/a><\/li>");
                         document.write("<\/ul>");
                         document.write("<\/div>");
                         document.write("<br><br>")
@@ -407,7 +407,10 @@ Device</span>).</p>
         asyncLoadScript('./js/control.js');
     } else {
         asyncLoadScript('jquery.js');
-        wait4load();
+//        asyncLoadScript('./js/jquery.min.js');
+        asyncLoadScript('bs.js');
+        asyncLoadScript('control.js');
+        //wait4load();
     }
     ;
 

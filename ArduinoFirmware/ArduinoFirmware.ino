@@ -6,7 +6,7 @@
 // Compilation options
 //#define DEBUG_EEPROM
 //#define DEBUG
-//#define PRINT_HEADERS
+#define PRINT_HEADERS
 #define VERBOSE
 #define ALLOW_CACHE
 
@@ -148,7 +148,7 @@ void configure (char* code){
   } else if (inout == _NAME) {
     code ++;
     codelen = 0;
-    for (byte i = 0; i<16&&code[i]!=' '; i++)
+    for (byte i = 0; i<16 && code[i]!=' '; i++)
       codelen++;
     strncpy(conf.devName, code, codelen);
     conf.devName[codelen] = '\0';
