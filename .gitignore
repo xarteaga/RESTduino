@@ -25,6 +25,7 @@
 # Unix Backups
 *~
 UserGUI/.idea/
+Node.js/.idea
 *.iml
 
 *.jar
