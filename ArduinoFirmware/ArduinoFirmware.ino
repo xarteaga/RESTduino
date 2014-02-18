@@ -1,7 +1,7 @@
 // Definitions
 #define SERIAL_BAUDRATE 115200
 #define REQUEST_MAXBUFFER 30
-#define HEADER_MAXBUFFER 20
+#define HEADER_MAXBUFFER 50
 #define DEV_NAME_MAX_LEN 16
 // Compilation options
 //#define DEBUG_EEPROM
@@ -100,8 +100,11 @@ byte requestRead () {
       Serial.print(header);
       #endif // PRINT_HEADERS
       #ifdef ALLOW_CACHE
-      if (strncmp(header, "If-None-Match", 5)==0){
+      if ((strncmp(header, "If-None-Match: contentNotModified", 23)==0 ||
+            strncmp(header, "Cache-Control: max-age=0",23)==0) &&
+            (val & _NOT_MODIFIED) == 0){
         val += _NOT_MODIFIED;
+        Serial.println(F("NO MODIFIED DETECTED!"));
       }
       #endif // ALLOW_CACHE
     }
