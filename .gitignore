@@ -29,3 +29,6 @@ Node.js/.idea
 *.iml
 
 *.jar
+
+# Ignore IntelGalileo Programmer directory
+IntelGalileoFirmware/arduino-1.5.3
