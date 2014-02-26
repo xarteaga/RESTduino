@@ -380,36 +380,14 @@ Device</span>).</p>
         document.getElementsByTagName('head')[0].appendChild(tag);
     }
 
-    function syncLoadScript(url) {
-        var se = document.createElement('script');
-        se.type = 'text/javascript';
-        se.text = $.ajax({type: "GET", url: url, async: false}).responseText;
-        document.getElementsByTagName("head")[0].appendChild(se);
-    }
-
-    function wait4load() {
-        if (typeof $ === 'undefined') {
-            setTimeout(function () {
-                wait4load();
-            }, 100);
-            return;
-        }
-        syncLoadScript('bs.js');
-        syncLoadScript('control.js');
-        document.getElementById("ipAddress").value = document.domain;
-        document.getElementById("ipAddress2").value = document.domain;
-    }
-
     if (document.domain == "" || document.domain == "localhost") {
         asyncLoadScript('./js/jquery.min.js');
         asyncLoadScript('./js/bootstrap.min.js');
         asyncLoadScript('./js/control.js');
     } else {
         asyncLoadScript('jquery.js');
-//        asyncLoadScript('./js/jquery.min.js');
         asyncLoadScript('bs.js');
         asyncLoadScript('control.js');
-        //wait4load();
     }
     ;
 
