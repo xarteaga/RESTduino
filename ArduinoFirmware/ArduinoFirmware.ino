@@ -69,12 +69,27 @@ struct SInputRawValues{
 SInputRawValues inputRawValues;
 
 void updateValues (){
+  File file;
+  char fileName [] = "ANX.dat";
   unsigned int timeStamp = millis();
-  if (timeStamp > inputRawValues.nextTimeStamp){
-    inputRawValues.nextTimeStamp = timeStamp + 1000;
-    unsigned short int * rawValues = inputRawValues.inputs;
-    for (byte i = 0; i<6; i++){
-      rawValues[i] = analogRead(i);
+  
+  if (timeStamp < inputRawValues.nextTimeStamp)
+    return;
+    
+  inputRawValues.nextTimeStamp = timeStamp + 1000;
+  unsigned short int * rawValues = inputRawValues.inputs;
+  for (byte i = 0; i<6; i++){
+    rawValues[i] = analogRead(i);
+    fileName[2] = 0x30 + i;
+    file = SD.open(fileName, FILE_WRITE);
+    if (file){
+      file.print(",");
+      file.print(rawValues[i]);
+      file.close();
+    } else {
+      Serial.print(F("Error opening file: '"));
+      Serial.print(fileName);
+      Serial.println(F("'"));
     }
   }
 }
@@ -639,6 +654,12 @@ void loop() {
     } else if (*path == ' '){
       fileRequest(htmlHeadPath);
       fileRequest(F("/INDEX.TXT"));
+    } else if (strncmp(path, "histX", 4) == 0){
+      fileRequest(jsHeadPath);
+      client.pushTx("[0");
+      fileRequest(F("/AN0.DAT"));
+      client.pushTx("]");
+      client.flushTx();
     } else {
       Serial.println(F("### Bad Path request ###"));
       client.print("HTTP/1.1 404 - File not Found\n");
