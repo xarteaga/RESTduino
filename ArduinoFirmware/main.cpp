@@ -1,7 +1,7 @@
 // Definitions
 #define SERIAL_BAUDRATE 115200
 #define REQUEST_MAXBUFFER 30
-#define HEADER_MAXBUFFER 50
+#define HEADER_MAXBUFFER 30
 #define DEV_NAME_MAX_LEN 16
 // Compilation options
 //#define DEBUG_EEPROM
@@ -11,391 +11,17 @@
 #define ALLOW_CACHE
 
 // Includes
-#include <SPI.h>
-#include <SD.h>
+#include <inttypes.h>
 #include <Ethernet.h>
-#include <EEPROM.h>
+#include <EthernetClient.h>
+#include <EthernetServer.h>
+#include "HttpServer.h"
 
-EthernetClient client;
+HttpServer server;
 
-// Request declarions
-char request [REQUEST_MAXBUFFER];
-
-// Initialize the Ethernet server library
-// with the IP address and port you want to use 
-// (port 80 is default for HTTP):
-EthernetServer server = EthernetServer(80);
-
-/*****************************************************************************************************
- *                                                  EEPROM                                           *
- *****************************************************************************************************/
-// EEPROM BASE ADDR
-#define _EEPROM_BASE   0x10
-
-// Define input/output
-#define _INPUT         'i'
-#define _OUTPUT        'o'
-#define _NAME          'n'
-#define _ADDR          'a'
-
-// Analog inputs
-#define _EMPTY         'e'
-#define _RAW           'r'
-#define _TEMPERATURE   't'
-#define _POTENCIOMETER 'p'
-#define _LIGHT         'l'
-
-// Outputs
-#define _LOGICAL       'b'  // 'b' of binary
-#define _PWM           'w'  // 'w' of width
-
-// Header options
-#define _REQ_OK        0x01
-#define _NOT_MODIFIED  0x02
-
-// Configuration structure
-struct Configuration{
-  char inputs [6];
-  char outputs [6];
-  byte ip;
-  char devName[DEV_NAME_MAX_LEN];
-};
-Configuration conf;
-
-struct SInputRawValues{
-  unsigned int nextTimeStamp;
-  unsigned short int inputs [6];
-};
-SInputRawValues inputRawValues;
-
-void updateValues (){
-  File file;
-  char fileName [] = "ANX.dat";
-  unsigned int timeStamp = millis();
-  
-  if (timeStamp < inputRawValues.nextTimeStamp)
-    return;
-    
-  inputRawValues.nextTimeStamp = timeStamp + 1000;
-  unsigned short int * rawValues = inputRawValues.inputs;
-  for (byte i = 0; i<6; i++){
-    rawValues[i] = analogRead(i);
-    fileName[2] = 0x30 + i;
-    file = SD.open(fileName, FILE_WRITE);
-    if (file){
-      file.print(",");
-      file.print(rawValues[i]);
-      file.close();
-    } else {
-      Serial.print(F("Error opening file: '"));
-      Serial.print(fileName);
-      Serial.println(F("'"));
-    }
-  }
-}
-
-/*****************************************************************************************************
- *                                            Request Read                                           *
- *****************************************************************************************************/
-byte requestRead () {
-  char header [HEADER_MAXBUFFER];
-  boolean currentLineIsBlank = true;
-  boolean firstLine = true;
-  byte reqLen = 0;
-  byte headLen = 0;
-  byte val = 0x00;
-  
-  while (client.connected() && client.available()) {
-    // Read header
-    char c = client.read();
-    
-    // Store in request only the first line with the httpmethod and the path
-    if (firstLine && reqLen < REQUEST_MAXBUFFER-1){
-      request[reqLen] = c;
-      reqLen ++;
-    } else if (headLen < HEADER_MAXBUFFER-1) {
-      header[headLen] = c;
-      headLen ++;
-    }
-    
-    // Detect the end of the header
-    if (c == '\n' && firstLine) {
-      request[reqLen-1] = '\n';
-      request[reqLen] = '\0';
-      Serial.print(request);
-      //Serial.println(F("### Ok Request ###"));
-      val += _REQ_OK;
-    } else if (c == '\n') {
-      header[headLen-1] = '\n';
-      header [headLen] = '\0';
-      #ifdef PRINT_HEADERS
-      Serial.print(header);
-      #endif // PRINT_HEADERS
-      #ifdef ALLOW_CACHE
-      if ((strncmp(header, "If-None-Match: contentNotModified", 23)==0 ||
-            strncmp(header, "Cache-Control: max-age=0",23)==0) &&
-            (val & _NOT_MODIFIED) == 0){
-        val += _NOT_MODIFIED;
-        Serial.println(F("NO MODIFIED DETECTED!"));
-      }
-      #endif // ALLOW_CACHE
-    }
-    
-    if (c == '\n' && currentLineIsBlank){
-      return val;
-    }
-    
-    // Detect line jumps
-    if (c == '\n') {
-      firstLine = false;
-      currentLineIsBlank = true;
-      reqLen = 0;
-      headLen = 0;
-    } else if (c != '\r') {
-      currentLineIsBlank = false;
-    }
-  }
-  return val;
-}
-
-boolean isValidChar4Name (char c){
-  if (c>0x2F && c<0x3A)
-    return true;
-  else if (c>0x40 && c<0x5B)
-    return true;
-  else if (c>0x60 && c<0x7B)
-    return true;
-  else if (c=='_')
-    return true;
-    
-  return false;
-}
-
-boolean checkDeviceName (char * devName){
-  byte i = 0;
-  for (i=0; i<DEV_NAME_MAX_LEN; i++){
-    if (!isValidChar4Name(devName[i])){
-      if (devName[i]=='\0' && i!=0)
-        return true;
-      // Invalid character
-      Serial.println(devName);
-      devName[0] = 'W';
-      devName[1] = 'e';
-      devName[2] = 'b';
-      devName[3] = 'd';
-      devName[4] = 'u';
-      devName[5] = 'i';
-      devName[6] = 'n';
-      devName[7] = 'o';
-      devName[8] = '\0';
-      return false;
-    }
-  }
-  devName[i] = 0; // Force End 
-  return false;
-}
-
-/*****************************************************************************************************
- *                                          Configure Arduino                                        *
- *****************************************************************************************************/
-void configure (char* code){
-  byte nport, type;
-  char inout;
-  
-  // Mode the pointer to the begining of the configuration code
-  code ++;
-  while(*code != '/')
-    code ++;
-  code ++;
-
-  inout = code[0];        // Get the type of port: input, output or device name
-  nport = code[1] - 0x30; // Get the port number (if any)
-  type = code[2];         // Get port configuration
-  
-  switch(inout){
-    case _INPUT:
-      if (nport > 5) return;  // If not valid value, return
-      conf.inputs[nport] = type;
-      EEPROM.write(_EEPROM_BASE + nport, type);
-      break;
-    case _OUTPUT:
-      if (nport > 5) return;  // If not valid value, return
-      conf.outputs[nport] = type;
-      EEPROM.write(_EEPROM_BASE + nport + 6, type);
-      break;
-    case _NAME:
-      byte devNameLen; // Declare the device name length
-      code ++; // Adjust config code pointer
-      /* Look for the end of the name, in case of being longer then DEV_NAME_MAX_LEN-1
-       * it will be cut to this number. */
-      for (devNameLen = 0; devNameLen<DEV_NAME_MAX_LEN-1 && code[devNameLen]!=' '; devNameLen++);
-      // Copy the Device name in the config structure
-      strncpy(conf.devName, code, devNameLen);
-      conf.devName[devNameLen] = '\0';  // End wil the end string (null) char
-      checkDeviceName(conf.devName);
-      // Copy the device name in the EEPROM
-            Serial.println(conf.devName);
-
-      for (byte i = 0; i<devNameLen+1; i++)
-        EEPROM.write(_EEPROM_BASE + (size_t)&conf.devName-(size_t)&conf + i, conf.devName[i]);
-      break;
-    case _ADDR:
-      code ++;
-      conf.ip = *code - 0x30;
-      EEPROM.write(_EEPROM_BASE + 12, conf.ip);
-      break;
-  }
-}
-
-/*****************************************************************************************************
- *                                          SET Output                                               *
- *****************************************************************************************************/
-void setOutput (char * cmd) {
-  const byte outTable [6] = { 11, 10, 9, 6, 5, 3};
-  cmd += 4;
-  byte nport = *cmd - 0x30;
-  if (nport > 5)
-    return;
-  cmd ++;
-  switch(*cmd){
-  case '0':
-    digitalWrite(outTable[nport], LOW);
-    break;
-  case '1':
-    digitalWrite(outTable[nport], HIGH);
-    break;
-  }
-}
-
-/*****************************************************************************************************
- *                                 ALL Sensors values Request (JSON)                                 *
- *****************************************************************************************************/
-void portsRequested (){
-  char baseRaw []= "_{\"val\":\"XXXX\"}_";
-  char baseTemp []= "_{\"val\":\"+XXX.X ºC\"}_"; // || {"val":"+068.0 ºC"},||
-  char basePot []= "_{\"val\":\"XXX.X %\"}_";
-  char baseLogical1 []= "_{\"val\":\"True\"}_";
-  char baseLogical0 []= "_{\"val\":\"False\"}_";
-  char baseEmpty []= "_{\"val\":\"Empty\"}_";
-  char actBaseOn []=    "_{\"val\":\"On\"}_";
-  char actBaseOff []=   "_{\"val\":\"Off\"}_";
-  char actBaseEmpty []= "_{\"val\":\"Empty\"}_";
-  const byte outTable [6] = { 11, 10, 9, 6, 5, 3 };
-  client.pushTx("{\"deviceName\":\"");
-  client.pushTx(conf.devName);
-  client.pushTx("\",\"inputs\":");
-  for (char i = 0; i < 6; i++) {
-    short raw = inputRawValues.inputs[i]; // Read analog port value
-    char type = conf.inputs[i];
-    if (type == _RAW) {
-        baseRaw[0] = (i==0)?'[':' ';
-        baseRaw[12] = 0x30 + raw%10;
-        raw /= 10;
-        baseRaw[11] = 0x30 + raw%10;
-        raw /= 10;
-        baseRaw[10] = 0x30 + raw%10;
-        baseRaw[9] = 0x30 + raw/10;
-        baseRaw[15] = (i!=5) ? ',':']';
-        client.pushTx(baseRaw);
-    } else if (type == _TEMPERATURE) {
-        short temp = (raw*10)/4 - 205;
-        baseTemp[0] = (i==0)?'[':' ';
-        baseTemp[9] = (temp < 0)?'-':'+';
-        baseTemp[14] = 0x30 + temp%10;
-        temp /= 10;
-        baseTemp[12] = 0x30 + temp%10;
-        temp /= 10;
-        baseTemp[11] = 0x30 + temp%10;
-        baseTemp[10] = 0x30 + temp/10;
-        baseTemp[21] = (i!=5)? ',':']';
-        client.pushTx(baseTemp);
-    } else if (type == _POTENCIOMETER) {
-      short percent = (((((raw*10)>>3)*10)>>3)*10)>>4;
-      basePot[0] = (i==0)?'[':' ';
-      basePot[13] = 0x30 + percent%10;
-      percent /= 10;
-      basePot[11] = 0x30 + percent%10;
-      percent /= 10;
-      basePot[10] = 0x30 + percent%10;
-      basePot[9] = 0x30 + percent/10;
-      basePot[18] = (i!=5)? ',':']';
-      client.pushTx(basePot);
-    } else if (type == _LIGHT) {
-      raw = raw >> 1;
-      baseRaw[0] = (i==0)?'[':' ';
-      baseRaw[12] = 0x30 + raw%10;
-      raw /= 10;
-      baseRaw[11] = 0x30 + raw%10;
-      raw /= 10;
-      baseRaw[10] = 0x30 + raw%10;
-      baseRaw[9] = 0x30 + raw/10;
-      baseRaw[15] = (i!=5) ? ',':']';
-      client.pushTx(baseRaw);
-    } else if (type == _LOGICAL) {
-      if (raw > 512){
-        baseLogical1[0] = (i==0)?'[':' ';
-        baseLogical1[15] = (i!=5)? ',':']';
-        client.pushTx(baseLogical1);
-      } else {
-        baseLogical0[0] = (i==0)?'[':' ';
-        baseLogical0[16] = (i!=5)? ',':']';
-        client.pushTx(baseLogical0);
-      }
-    } else {
-      baseEmpty[0] = (i==0)?'[':' ';
-      baseEmpty[16] = (i!=5)? ',':']';
-      client.pushTx(baseEmpty);
-    }
-  }
-  client.pushTx(",\"outputs\":");
-  for (char i = 0; i < 6; i++) {
-    char type = conf.outputs[i];
-    if (type == _LOGICAL){
-      if (digitalRead(outTable[i])==1){
-        actBaseOn[0] = (i==0)?'[':' ';
-        actBaseOn[13] = (i!=5)? ',':']';
-        client.pushTx(actBaseOn);
-      } else {
-        actBaseOff[0] = (i==0)?'[':' ';
-        actBaseOff[14] = (i!=5)? ',':']';
-        client.pushTx(actBaseOff);
-      }
-    } else {
-      actBaseEmpty[0] = (i==0)?'[':' ';
-      actBaseEmpty[16] = (i!=5)? ',':']';
-      client.pushTx(actBaseEmpty);
-    }
-  }
-  client.pushTx("}\n");
-  client.flushTx();
-}
-
-/*****************************************************************************************************
- *                                   Ports types request (JSON)                                      *
- *****************************************************************************************************/
-void confRequest (){
-  char confBase [] = "_{\"type\":\"X\"}_}";
-  client.pushTx("{\"deviceName\":\"");
-  client.pushTx(conf.devName);
-  client.pushTx("\",\"ip\":\"");
-  client.pushTx(0x30 + conf.ip);
-  client.pushTx("\",\"ports\":");
-  for (char i=0; i<12; i++){
-    confBase [0] = (i==0)?'[':' ';
-    confBase [13] = (i!=11)?',':']';
-    confBase [14] = (i!=11)?'\0':'}';
-    confBase[10] = conf.inputs[i];
-    client.pushTx(confBase);
-  }
-  client.flushTx();
-}
-
-/*****************************************************************************************************
- *                                            File request                                           *
- *****************************************************************************************************/
-void fileRequest (const __FlashStringHelper* filePathP) {
+void fileRequest (const __FlashStringHelper* filePathP, EthernetClient * client) {
   #define NBUFF 8
-  #define BUFFLEN 128 // 8*128 = 1024 (Size of packets in bytes)
+  #define BUFFLEN 64 // 8*128 = 1024 (Size of packets in bytes)
   char  filePath[16];
   strcpy_P(filePath, (const prog_char*)filePathP); // Convert File path in RAM path from Flash
   size_t i;                // Counter
@@ -408,10 +34,10 @@ void fileRequest (const __FlashStringHelper* filePathP) {
     while (file.available()) {
       for (i = 0; i < NBUFF && file.available(); i++){
         // Read BUFFLEN characters and push it in the Socket buffer
-        client.pushTx(buffer, file.read(buffer, BUFFLEN));
+        client->pushTx(buffer, file.read(buffer, BUFFLEN));
       }
       // Empty the tx buffer (send buffered data)
-      client.flushTx();
+      client->flushTx();
     }
 
     // Close the file:
@@ -423,254 +49,102 @@ void fileRequest (const __FlashStringHelper* filePathP) {
   }
 }
 
-/*****************************************************************************************************
- *                                          SETUP Subroutine                                         *
- *****************************************************************************************************/
+int8_t serveIndex (uint8_t method, char* path, EthernetClient *client){
+	Serial.println(method);
+	Serial.println(path);
+	fileRequest(F("/HTMLHEAD.HDR"), client);
+	fileRequest(F("/INDEX.TXT"), client);
+	client->stop();
+	Serial.println(F("Success!"));
+	return 0;
+}
+
+int8_t serveCss (uint8_t method, char* path, EthernetClient *client){
+	Serial.println(method);
+	Serial.println(path);
+	fileRequest(F("/CSSHEAD.HDR"), client);
+	fileRequest(F("/BS.CSS"), client);
+	client->stop();
+	return 0;
+}
+
+int8_t serveCssRes (uint8_t method, char* path, EthernetClient *client){
+	Serial.println(method);
+	Serial.println(path);
+	fileRequest(F("/CSSHEAD.HDR"), client);
+	fileRequest(F("/BSR.CSS"), client);
+	client->stop();
+	return 0;
+}
+
+int8_t serveJQuery (uint8_t method, char* path, EthernetClient *client){
+	Serial.println(method);
+	Serial.println(path);
+	fileRequest(F("/JSHEAD.HDR"), client);
+	fileRequest(F("/JQUERY.TXT"), client);
+	client->stop();
+	return 0;
+}
+
+int8_t serveControl (uint8_t method, char* path, EthernetClient *client){
+	Serial.println(method);
+	Serial.println(path);
+	fileRequest(F("/JSHEAD.HDR"), client);
+	fileRequest(F("/CTRL.TXT"), client);
+	client->stop();
+	return 0;
+}
+
+int8_t serveBs (uint8_t method, char* path, EthernetClient *client){
+	Serial.println(method);
+	Serial.println(path);
+	fileRequest(F("/JSHEAD.HDR"), client);
+	fileRequest(F("/BSJS.TXT"), client);
+	Serial.println("Success!");
+	client->stop();
+	return 0;
+}
+
+int8_t serveImg (uint8_t method, char* path, EthernetClient *client){
+	Serial.println(method);
+	Serial.println(path);
+	fileRequest(F("/SHIELD.TXT"), client);
+	client->stop();
+	return 0;
+}
+
 void setup() {
-  // Digital output vector
-  const char outTable [6] = { 11, 10, 9, 6, 5, 3 };
-  
-  // Open serial communications and wait for port to open:
-  Serial.begin(SERIAL_BAUDRATE);
-  Serial.println(F("--- Arduino Ethernet Debug interface ---"));
+	Serial.begin(SERIAL_BAUDRATE);
 
-  // Setup ports configuration
-  byte* confptr = (byte*)&conf;
-  for (byte i=0; i<sizeof(Configuration); i++){
-    confptr[i] = EEPROM.read(_EEPROM_BASE + i);
-  }
-  
-  // Check the device name and configuration (first time name setting)
-  char *devName = conf.devName;
-  if (!checkDeviceName(devName)){
-    for (byte i = 0; i<DEV_NAME_MAX_LEN; i++){
-        EEPROM.write(_EEPROM_BASE + (size_t)&conf.devName-(size_t)&conf + i, conf.devName[i]);
-    }
-  }
+	byte mac [] = {0xDE,0xAD,0xBE,0xEF,0xFE,0xED};
+	IPAddress ip = IPAddress((uint8_t)192,(uint8_t)168,(uint8_t)10,(uint8_t)2);
+	IPAddress dns = IPAddress((uint8_t)147,(uint8_t)83,(uint8_t)2,(uint8_t)3);
+	IPAddress gw = IPAddress((uint8_t)192,(uint8_t)168,(uint8_t)10,(uint8_t)1);
+	IPAddress subnet = IPAddress((uint8_t)255,(uint8_t)255,(uint8_t)255,(uint8_t)0);
+	uint16_t port = 80;
 
-  /* Uncomment next line to reset network Addr */
-  //configure("//a0");
+	server.pushEntry(GET, "/index.html", serveIndex);
+	server.pushEntry(GET, "/bs.css", serveCss);
+	server.pushEntry(GET, "/bs-res.css", serveCssRes);
+	server.pushEntry(GET, "/jquery.js", serveJQuery);
+	server.pushEntry(GET, "/control.js", serveControl);
+	server.pushEntry(GET, "/bs.js", serveBs);
+	server.pushEntry(GET, "/shield.jpg", serveBs);
+	server.pushEntry(GET, "/", serveIndex);
+	server.start(mac, ip, dns, gw, subnet, port);
 
-  // start the Ethernet connection and the server:
-  byte ipAddr [4];
-  byte gwAddr [4];
-  byte subnet [4];
-  byte dns[4] = {147, 83, 2, 3};
-  byte i;
-  uint16_t port = 0;
-  
-  if (conf.ip==1){ /* --- NETWORK CONFIGURATION 1 --- */
-    // Ip Address 192.168.10.130
-    ipAddr[0] = 192;
-    ipAddr[1] = 168;
-    ipAddr[2] = 10;
-    ipAddr[3] = 130;
-    // Gateway Address 192.168.10.1
-    gwAddr[0] = 192;
-    gwAddr[1] = 168;
-    gwAddr[2] = 10;
-    gwAddr[3] = 129;
-    // Subnet Mask 255.255.255.192 (/26)
-    subnet[0] = 255;
-    subnet[1] = 255;
-    subnet[2] = 255;
-    subnet[3] = 192;
-    // Port 8080
-    port = 8080;
-  } else if (conf.ip==2){
-    // Ip Address 10.0.1.2
-    ipAddr[0] = 10;
-    ipAddr[1] = 0;
-    ipAddr[2] = 1;
-    ipAddr[3] = 2;
-    // Gateway Address 10.0.1.1
-    gwAddr[0] = 10;
-    gwAddr[1] = 0;
-    gwAddr[2] = 1;
-    gwAddr[3] = 1;
-    // Subnet Mask 255.255.255.192 (/24)
-    subnet[0] = 255;
-    subnet[1] = 255;
-    subnet[2] = 255;
-    subnet[3] = 0;
-    // Port 80
-    port = 80;
-  } else if (conf.ip==3){
-    // Ip Address 10.0.1.130
-    ipAddr[0] = 10;
-    ipAddr[1] = 0;
-    ipAddr[2] = 1;
-    ipAddr[3] = 130;
-    // Gateway Address 10.0.1.129
-    gwAddr[0] = 10;
-    gwAddr[1] = 0;
-    gwAddr[2] = 1;
-    gwAddr[3] = 129;
-    // Subnet Mask 255.255.255.192 (/26)
-    subnet[0] = 255;
-    subnet[1] = 255;
-    subnet[2] = 255;
-    subnet[3] = 192;
-    // Port 8080
-    port = 8080;
-  } else { /* --- NETWORK CONFIGURATION 0 --- */
-    // Ip Address 192.168.10.2
-    ipAddr[0] = 192;
-    ipAddr[1] = 168;
-    ipAddr[2] = 10;
-    ipAddr[3] = 2;
-    // Gateway Address 192.168.10.1
-    gwAddr[0] = 192;
-    gwAddr[1] = 168;
-    gwAddr[2] = 10;
-    gwAddr[3] = 1;
-    // Subnet Mask 255.255.255.0 (/24)
-    subnet[0] = 255;
-    subnet[1] = 255;
-    subnet[2] = 255;
-    subnet[3] = 0;
-    // Port 80
-    port = 80;
-  } 
-  
-  // Enter a MAC address and IP address for your controller below.
-// The IP address will be dependent on your local network:
-  byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-  IPAddress ip (ipAddr[0],ipAddr[1],ipAddr[2],ipAddr[3]);
-  Ethernet.begin(mac, ip, dns, gwAddr, subnet); 
-  
-  server.setPort(port);
-  server.begin();
-  
-  Serial.print(F("Server is at "));
-  Serial.print(Ethernet.localIP());
-  Serial.print(F(":"));
-  Serial.println(port);
-  Serial.print(F("Gateway: "));
-  for (i = 0; i<4; i++){
-    Serial.print(gwAddr[i]);
-    if (i!=3)
-      Serial.print(F("."));
-  }
-  Serial.print(F("\nNetmask: "));
-  for (i = 0; i<4; i++){
-    Serial.print(subnet[i]);
-    if (i!=3)
-      Serial.print(F("."));
-  }
-  Serial.print(F("\n"));
-  
-  //  Print Device name
-  Serial.print(F("Device name: "));
-  Serial.print(conf.devName);
-  Serial.print('\n');
-  
-  // Setup outputs
-  for (byte i = 0; i < 6; i++){
-    pinMode(outTable[i], OUTPUT);
-  }
- 
-  // Create SD
-  digitalWrite(10, LOW);
-  digitalWrite(10, HIGH);
-  if (!SD.begin(4)) {
-    Serial.println(F("SD Initialization failed!"));
-    while(true)delay(1000);
-  }
-  
-  inputRawValues.nextTimeStamp = millis();
+	// Create SD
+	digitalWrite(10, LOW);
+	digitalWrite(10, HIGH);
+	if (!SD.begin(4)) {
+		while(true){
+			Serial.println(F("SD Initialization failed!"));
+			delay(1000);
+		}
+	}
 }
 
 void loop() {
-  updateValues();
-  
-  // Pointer to the flash memory
-  const __FlashStringHelper* jsonHeadPath = F("/JSONHEAD.HDR");
-  const __FlashStringHelper* htmlHeadPath = F("/HTMLHEAD.HDR");
-  const __FlashStringHelper* jsHeadPath = F("/JSHEAD.HDR");
-  const __FlashStringHelper* cssHeadPath = F("/CSSHEAD.HDR");
-
-  // Listen for incoming clients
-  client = server.available();
-  char* path = request;
-
-  if (!client)
-    return;
-    
-  while (client && client.available())
-  {  
-    #ifdef DEBUG_HTTP
-      Serial.println(F("--- Begin of the Request ---"));
-    #endif // DEBUG_HTTP
-    
-    byte headers = requestRead();
-    if ((headers & _REQ_OK) == 0)
-      return;
-    
-    while(*path != '/')
-      path++;
-    path++;
-        
-    if (strncmp(request, "GET", 3)!=0)
-      return;
-  
-    if ((headers & _NOT_MODIFIED) != 0){
-        Serial.println(F("Sending not modified"));
-        client.print("HTTP/1.1 304 - Not Modified\n");
-    } else if (strncmp(path, "ports", 5) == 0) {
-      fileRequest(jsonHeadPath);
-      portsRequested();
-    } else if (strncmp(path, "config", 6) == 0){
-      fileRequest(jsonHeadPath);
-      confRequest();
-    } else if (strncmp(path, "set", 3)==0){
-      configure(path);
-      fileRequest(jsonHeadPath);
-      confRequest();
-    } else if (strncmp(path, "out",3)==0){
-      setOutput(path);
-      fileRequest(jsonHeadPath);
-      portsRequested();
-    } else if (strncmp(path, "index", 5) == 0){
-      fileRequest(htmlHeadPath);
-      fileRequest(F("/INDEX.TXT"));
-    } else if (strncmp(path, "bs.css", 6) == 0){
-      fileRequest(cssHeadPath);
-      fileRequest(F("/BS.CSS"));
-    } else if (strncmp(path, "bs-res.css", 10) == 0){
-      fileRequest(cssHeadPath);
-      fileRequest(F("/BSR.CSS"));
-    } else if (strncmp(path, "jquery.js", 9) == 0){
-      fileRequest(jsHeadPath);
-      fileRequest(F("/JQUERY.TXT"));
-    } else if (strncmp(path, "control.js", 10) == 0){
-      fileRequest(jsHeadPath);
-      fileRequest(F("/CTRL.TXT"));
-    } else if (strncmp(path, "bs.js", 5) == 0){
-      fileRequest(jsHeadPath);
-      fileRequest(F("/BSJS.TXT"));
-    } else if (strncmp(path, "shield.jpg", 5) == 0){
-      fileRequest(F("/SHIELD.TXT"));
-    } else if (*path == ' '){
-      fileRequest(htmlHeadPath);
-      fileRequest(F("/INDEX.TXT"));
-    } else if (strncmp(path, "histX", 4) == 0){
-      fileRequest(jsHeadPath);
-      client.pushTx("[0");
-      fileRequest(F("/AN0.DAT"));
-      client.pushTx("]");
-      client.flushTx();
-    } else {
-      Serial.println(F("### Bad Path request ###"));
-      client.print("HTTP/1.1 404 - File not Found\n");
-    }
-    #ifdef DEBUG_HTTP
-    Serial.println(F("---  End of the Request  ---"));
-    #endif // DEBUG_HTTP
-  }
-  // close the connection:
-  if (client){
-    client.stop();
-  }
+  server.proccess();
 }
 
