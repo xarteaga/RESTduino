@@ -62,6 +62,38 @@ struct Configuration{
 };
 Configuration conf;
 
+struct SInputRawValues{
+  unsigned int nextTimeStamp;
+  unsigned short int inputs [6];
+};
+SInputRawValues inputRawValues;
+
+void updateValues (){
+  File file;
+  char fileName [] = "ANX.dat";
+  unsigned int timeStamp = millis();
+  
+  if (timeStamp < inputRawValues.nextTimeStamp)
+    return;
+    
+  inputRawValues.nextTimeStamp = timeStamp + 1000;
+  unsigned short int * rawValues = inputRawValues.inputs;
+  for (byte i = 0; i<6; i++){
+    rawValues[i] = analogRead(i);
+    fileName[2] = 0x30 + i;
+    file = SD.open(fileName, FILE_WRITE);
+    if (file){
+      file.print(",");
+      file.print(rawValues[i]);
+      file.close();
+    } else {
+      Serial.print(F("Error opening file: '"));
+      Serial.print(fileName);
+      Serial.println(F("'"));
+    }
+  }
+}
+
 /*****************************************************************************************************
  *                                            Request Read                                           *
  *****************************************************************************************************/
@@ -163,9 +195,12 @@ void configure (char* code){
       // Copy the Device name in the config structure
       strncpy(conf.devName, code, devNameLen);
       conf.devName[devNameLen] = '\0';  // End wil the end string (null) char
+      checkDeviceName(conf.devName);
       // Copy the device name in the EEPROM
-      for (byte i = 0; i<devNameLen; i++)
-        EEPROM.write(_EEPROM_BASE + 13 + i, conf.devName[i]);
+            Serial.println(conf.devName);
+
+      for (byte i = 0; i<devNameLen+1; i++)
+        EEPROM.write(_EEPROM_BASE + (size_t)&conf.devName-(size_t)&conf + i, conf.devName[i]);
       break;
     case _ADDR:
       code ++;
@@ -213,7 +248,7 @@ void portsRequested (){
   client.pushTx(conf.devName);
   client.pushTx("\",\"inputs\":");
   for (char i = 0; i < 6; i++) {
-    short raw = analogRead(i); // Read analog port value
+    short raw = inputRawValues.inputs[i]; // Read analog port value
     char type = conf.inputs[i];
     if (type == _RAW) {
         baseRaw[0] = (i==0)?'[':' ';
@@ -351,6 +386,43 @@ void fileRequest (const __FlashStringHelper* filePathP) {
   }
 }
 
+boolean isValidChar4Name (char c){
+  if (c>0x2F && c<0x3A)
+    return true;
+  else if (c>0x40 && c<0x5B)
+    return true;
+  else if (c>0x60 && c<0x7B)
+    return true;
+  else if (c=='_')
+    return true;
+    
+  return false;
+}
+
+boolean checkDeviceName (char * devName){
+  byte i = 0;
+  for (i=0; i<DEV_NAME_MAX_LEN; i++){
+    if (!isValidChar4Name(devName[i])){
+      if (devName[i]=='\0' && i!=0)
+        return true;
+      // Invalid character
+      Serial.println(devName);
+      devName[0] = 'W';
+      devName[1] = 'e';
+      devName[2] = 'b';
+      devName[3] = 'd';
+      devName[4] = 'u';
+      devName[5] = 'i';
+      devName[6] = 'n';
+      devName[7] = 'o';
+      devName[8] = '\0';
+      return false;
+    }
+  }
+  devName[i] = 0; // Force End 
+  return false;
+}
+
 /*****************************************************************************************************
  *                                          SETUP Subroutine                                         *
  *****************************************************************************************************/
@@ -370,26 +442,10 @@ void setup() {
   
   // Check the device name and configuration (first time name setting)
   char *devName = conf.devName;
-  for (byte i=0; i<DEV_NAME_MAX_LEN; i++){
-      if (devName[i]<33 || devName[i]>122){
-        if (devName[i]==0 && i!=0)
-          break;
-        else{
-          devName[0] = 'W';
-          devName[1] = 'e';
-          devName[2] = 'b';
-          devName[3] = 'd';
-          devName[4] = 'u';
-          devName[5] = 'i';
-          devName[6] = 'n';
-          devName[7] = 'o';
-          devName[8] = 0;
-          for (byte j = 0; i<9; i++){
-            EEPROM.write(_EEPROM_BASE + 13 + j, conf.devName[j]);
-          }
-          break;
-        }
-      }
+  if (!checkDeviceName(devName)){
+    for (byte i = 0; i<DEV_NAME_MAX_LEN; i++){
+        EEPROM.write(_EEPROM_BASE + (size_t)&conf.devName-(size_t)&conf + i, conf.devName[i]);
+    }
   }
 
   /* Uncomment next line to reset network Addr */
@@ -521,9 +577,13 @@ void setup() {
     Serial.println(F("SD Initialization failed!"));
     while(true)delay(1000);
   }
+  
+  inputRawValues.nextTimeStamp = millis();
 }
 
 void loop() {
+  updateValues();
+  
   // Pointer to the flash memory
   const __FlashStringHelper* jsonHeadPath = F("/JSONHEAD.HDR");
   const __FlashStringHelper* htmlHeadPath = F("/HTMLHEAD.HDR");
@@ -594,6 +654,12 @@ void loop() {
     } else if (*path == ' '){
       fileRequest(htmlHeadPath);
       fileRequest(F("/INDEX.TXT"));
+    } else if (strncmp(path, "histX", 4) == 0){
+      fileRequest(jsHeadPath);
+      client.pushTx("[0");
+      fileRequest(F("/AN0.DAT"));
+      client.pushTx("]");
+      client.flushTx();
     } else {
       Serial.println(F("### Bad Path request ###"));
       client.print("HTTP/1.1 404 - File not Found\n");
