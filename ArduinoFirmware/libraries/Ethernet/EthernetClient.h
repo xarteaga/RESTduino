@@ -1,5 +1,6 @@
 #ifndef ethernetclient_h
 #define ethernetclient_h
+#include <avr/pgmspace.h>
 #include "Arduino.h"	
 #include "Print.h"
 #include "Client.h"
@@ -30,6 +31,7 @@ public:
   virtual size_t pushTx(char);
   virtual size_t pushTx(char []);
   virtual size_t pushTx(const uint8_t *, size_t);
+  virtual size_t pushTx(const __FlashStringHelper* buf);
   virtual size_t flushTx();
 
   friend class EthernetServer;

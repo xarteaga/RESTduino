@@ -14,7 +14,7 @@ BUILD_PATH = ./build
 
 # Compilation and upload options
 ###############################################################################
-ARDUINO_OPT = -w -g -Os -Wall -fno-exceptions -ffunction-sections -fdata-sections -DARDUINO=100 -Wl,--gc-sections
+ARDUINO_OPT = -w -g -Os -Wall -fno-exceptions -ffunction-sections -fdata-sections -finline-functions -funswitch-loops -DARDUINO=100 -Wl,--gc-sections
 ARDUINO_CHIP = atmega328p
 ARDUINO_RATE = 115200	# serial bit rate
 ARDUINO_FCPU = 16000000L # CPU frequency in Hz
@@ -46,14 +46,7 @@ AVR_DUDE_LINUX = avrdude -C /usr/share/arduino/hardware/tools/avrdude.conf
 LDFLAGS = $(ARDUINO_OPT) -mmcu=$(ARDUINO_CHIP) -DF_CPU=$(ARDUINO_FCPU) -I$(ARDUINO_CORE_PATH) -I$(ARDUINO_PINS_PATH) $(ARDUINO_LIBS_INC)
 # User Sources
 ###############################################################################
-SOURCES = main.cpp
-
-# Other...
-###############################################################################
-OBJECTS = $(SOURCES:.cpp=.o)
-
-CORE_OBJECTS=$(ARDUINO_CORES:.c=.o) $(ARDUINO_CORES_XX:.cpp=.o)
-LIBS_OBJECTS=$(ARDUINO_LIBS:.c=.o) $(ARDUINO_LIBS_XX:.cpp=.o)
+SOURCES = main.cpp FileResources.cpp DeviceResource.cpp SensorPlatform.cpp
 
 # Binary loadable files...
 ###############################################################################
@@ -62,8 +55,10 @@ BINARY=$(EXECUTABLE:.elf=.hex)
 
 # Rules
 ###############################################################################
-all: 
-	$(CXX) $(LDFLAGS) -o $(BUILD_PATH)/$(EXECUTABLE) $(ARDUINO_CORES_XX) $(ARDUINO_CORES) $(ARDUINO_LIBS) $(ARDUINO_LIBS_XX) $(SOURCES)
+all: $(EXECUTABLE)
+
+$(EXECUTABLE):
+	$(CXX) $(LDFLAGS) -o $(BUILD_PATH)/$@ $(ARDUINO_CORES_XX) $(ARDUINO_CORES) $(ARDUINO_LIBS) $(ARDUINO_LIBS_XX) $(SOURCES)
 
 core: $(CORE_OBJECTS)
 

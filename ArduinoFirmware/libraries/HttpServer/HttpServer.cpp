@@ -5,10 +5,6 @@
 #include <EthernetServer.h>
 #include "HttpServer.h"
 
-/*HttpServer::HttpServer() {
-	Serial.println("Hola Mundo!");
-}*/
-
 int8_t HttpServer::getMethod(){
 	uint8_t i;
 	char method[8];
@@ -88,10 +84,10 @@ uint8_t HttpServer::getHeaders(){
 void HttpServer::start(byte * mac, IPAddress ip, IPAddress dns, IPAddress gwAddr, IPAddress subnet, uint16_t port) {
 	Ethernet.begin(mac, ip, dns, gwAddr, subnet);
 	server.setPort(port);
-	Serial.println("Server started!");
+	Serial.println(F("Server started!"));
 }
 
-int8_t HttpServer::pushEntry(uint8_t m, char *p, callback_t callback){
+int8_t HttpServer::pushEntry(uint8_t m, const __FlashStringHelper* p, callback_t callback){
 	// Check space
 	if (numEntries >= MAX_ENTRIES)
 		return -1;
@@ -99,7 +95,7 @@ int8_t HttpServer::pushEntry(uint8_t m, char *p, callback_t callback){
 	// Push entry
 	ServerEntry entry;
 	entry.method = m;
-	strcpy(entry.path, p);
+	entry.path = p;
 	entry.callback = callback;
 	serverEntries[numEntries] = entry;
 	
@@ -126,16 +122,16 @@ int8_t HttpServer::proccess() {
 	Serial.println(headers);
 
 	// Get backcall
-	for (i=0; i<numEntries; i++){
+	for (i=0; i<numEntries != NONE; i++){
 		ServerEntry entry = serverEntries[i];
-		n = strlen(entry.path);
+		n = strlen_P((const prog_char*)entry.path);
 		Serial.print("Comparing: '");
 		Serial.print(path);
 		Serial.print("' with '");
 		Serial.print(entry.path);
 		Serial.println("'");
 
-		if (n<=pathLen && strncmp(entry.path, path, n)==0){	
+		if (n<=pathLen && strncmp_P(path, (const prog_char*)entry.path, n)==0){
 			Serial.println("HIT!");
 			return (*(entry.callback))(method, path, &client);
 		}
