@@ -6,6 +6,7 @@
 #include "HttpServer.h"
 
 int8_t HttpServer::getMethod(){
+
 	uint8_t i;
 	char method[8];
 	char c;
@@ -27,8 +28,11 @@ int8_t HttpServer::getMethod(){
 
 	// Compare method
 	for (i=0; methodMap[i].key!=0; i++){
-		if (strcmp(method, methodMap[i].name)==0)
+		if (strcmp_P(method, (PGM_P)methodMap[i].name)==0){
+			Serial.print(F("Method: "));
+			Serial.println(method);
 			return methodMap[i].key;
+		}
 	}
 	return -2;
 };
@@ -50,6 +54,10 @@ int8_t HttpServer::getPath(){
 
 	// Limit the method string
 	path[i] = '\0';
+
+	// Print Path
+	Serial.print(F("Path: "));
+	Serial.println(path);
 
 	return i;
 }
@@ -125,14 +133,8 @@ int8_t HttpServer::proccess() {
 	for (i=0; i<numEntries != NONE; i++){
 		ServerEntry entry = serverEntries[i];
 		n = strlen_P((const prog_char*)entry.path);
-		Serial.print("Comparing: '");
-		Serial.print(path);
-		Serial.print("' with '");
-		Serial.print(entry.path);
-		Serial.println("'");
 
 		if (n<=pathLen && strncmp_P(path, (const prog_char*)entry.path, n)==0){
-			Serial.println("HIT!");
 			return (*(entry.callback))(method, path, &client);
 		}
 	}

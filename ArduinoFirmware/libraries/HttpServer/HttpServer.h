@@ -30,27 +30,6 @@
 #define _REQ_OK        0x01
 #define _NOT_MODIFIED  0x02
 
-typedef struct {
-	uint8_t key;
-	char name[8];
-} MethodMapper;
-
-const MethodMapper methodMap [] = {
-			{GET,"GET"},
-			{POST,"POST"},
-			{PUT,"PUT"},
-			{PATCH,"PATCH"},
-			{DELETE,"DELETE"},
-			{COPY,"COPY"},
-			{HEAD,"HEAD"},
-			{OPTIONS,"OPTIONS"},
-			{LINK,"LINK"},
-			{UNLINK,"UNLINK"},
-			{PURGE,"PURGE"},
-			{NONE,"NONE"}
-		};
-
-
 typedef int8_t (*callback_t) (uint8_t method, char* path, EthernetClient *client);
 
 typedef struct {
@@ -59,9 +38,44 @@ typedef struct {
 	callback_t callback;
 } ServerEntry;
 
+typedef struct {
+	uint8_t key;
+	const __FlashStringHelper* name;
+} MethodMapper;
+
 class HttpServer {
 	public:
-		HttpServer():server(EthernetServer(80)){numEntries = 0;};
+		HttpServer():server(EthernetServer(80)){
+			numEntries = 0;
+
+			const __FlashStringHelper* meth_get = F("GET");
+			const __FlashStringHelper* meth_post = F("POST");
+			const __FlashStringHelper* meth_put = F("PUT");
+			const __FlashStringHelper* meth_patch = F("PATCH");
+			const __FlashStringHelper* meth_delete = F("DELETE");
+			const __FlashStringHelper* meth_copy = F("COPY");
+			const __FlashStringHelper* meth_head = F("HEAD");
+			const __FlashStringHelper* meth_options = F("OPTIONS");
+			const __FlashStringHelper* meth_link = F("LINK");
+			const __FlashStringHelper* meth_unlink = F("UNLINK");
+			const __FlashStringHelper* meth_purge = F("PURGE");
+			const __FlashStringHelper* meth_none = F("NONE");
+
+			methodMap = {
+								{GET, meth_get},
+								{POST, meth_post},
+								{PUT, meth_put},
+								{PATCH, meth_patch},
+								{DELETE, meth_delete},
+								{COPY, meth_copy},
+								{HEAD, meth_head},
+								{OPTIONS, meth_options},
+								{LINK, meth_link},
+								{UNLINK, meth_unlink},
+								{PURGE, meth_purge},
+								{NONE, meth_none}
+							};
+		};
 		void start(byte * mac, IPAddress ip, IPAddress dns, IPAddress gwAddr, IPAddress subnet, uint16_t port);
 		int8_t proccess(void);
 		int8_t pushEntry(uint8_t m, const __FlashStringHelper* p, callback_t callback);
@@ -75,6 +89,7 @@ class HttpServer {
 		int8_t getMethod(void);
 		int8_t getPath();
 		uint8_t getHeaders();
+		MethodMapper methodMap [12];
 };
 
 #endif
