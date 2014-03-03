@@ -6,9 +6,9 @@
 #include <EthernetClient.h>
 #include <EthernetServer.h>
 
-#define MAX_PATH		24
+#define MAX_PATH		32
 #define MAX_PATH_ENTRY	12
-#define MAX_ENTRIES		15
+#define MAX_ENTRIES		13
 #define MAX_HEAD		1024
 #define MAX_LINE_LEN	30
 
@@ -30,7 +30,7 @@
 #define _REQ_OK        0x01
 #define _NOT_MODIFIED  0x02
 
-typedef int8_t (*callback_t) (uint8_t method, char* path, EthernetClient *client);
+typedef void (*callback_t) (uint8_t method, char* path, EthernetClient *client);
 
 typedef struct {
 	uint8_t method;
@@ -49,7 +49,7 @@ class HttpServer {
 			numEntries = 0;
 
 			const __FlashStringHelper* meth_get = F("GET");
-			const __FlashStringHelper* meth_post = F("POST");
+			/*const __FlashStringHelper* meth_post = F("POST");
 			const __FlashStringHelper* meth_put = F("PUT");
 			const __FlashStringHelper* meth_patch = F("PATCH");
 			const __FlashStringHelper* meth_delete = F("DELETE");
@@ -58,12 +58,12 @@ class HttpServer {
 			const __FlashStringHelper* meth_options = F("OPTIONS");
 			const __FlashStringHelper* meth_link = F("LINK");
 			const __FlashStringHelper* meth_unlink = F("UNLINK");
-			const __FlashStringHelper* meth_purge = F("PURGE");
+			const __FlashStringHelper* meth_purge = F("PURGE");*/
 			const __FlashStringHelper* meth_none = F("NONE");
 
 			methodMap = {
 								{GET, meth_get},
-								{POST, meth_post},
+								/*{POST, meth_post},
 								{PUT, meth_put},
 								{PATCH, meth_patch},
 								{DELETE, meth_delete},
@@ -72,13 +72,14 @@ class HttpServer {
 								{OPTIONS, meth_options},
 								{LINK, meth_link},
 								{UNLINK, meth_unlink},
-								{PURGE, meth_purge},
+								{PURGE, meth_purge},*/
 								{NONE, meth_none}
 							};
 		};
 		void start(byte * mac, IPAddress ip, IPAddress dns, IPAddress gwAddr, IPAddress subnet, uint16_t port);
-		int8_t proccess(void);
-		int8_t pushEntry(uint8_t m, const __FlashStringHelper* p, callback_t callback);
+		void proccess(void);
+		void pushEntry(uint8_t m, const __FlashStringHelper* p, callback_t callback);
+		void getTime();
 
 	private:
 		char path[MAX_PATH];
@@ -89,7 +90,7 @@ class HttpServer {
 		int8_t getMethod(void);
 		int8_t getPath();
 		uint8_t getHeaders();
-		MethodMapper methodMap [12];
+		MethodMapper methodMap [2];
 };
 
 #endif

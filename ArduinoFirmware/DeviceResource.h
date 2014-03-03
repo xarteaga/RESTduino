@@ -4,7 +4,9 @@
 #include <inttypes.h>
 #include <EthernetClient.h>
 
-int8_t portsRequest(uint8_t method, char * path, EthernetClient * client) ;
-int8_t configRequest(uint8_t method, char * path, EthernetClient * client) ;
+void portsRequest(uint8_t method, char * path, EthernetClient * client) ;
+void configRequest(uint8_t method, char * path, EthernetClient * client) ;
+void configSet(uint8_t method, char * path, EthernetClient * client) ;
+void setOutput(uint8_t method, char * path, EthernetClient * client) ;
 
 #endif

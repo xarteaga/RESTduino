@@ -5,17 +5,24 @@
 #include "FileResources.h"
 #include "SensorPlatform.h"
 
-int8_t portsRequest(uint8_t method, char * path, EthernetClient * client) {
+void portsRequest (uint8_t method, char * path, EthernetClient * client) {
 	fileRequest(F("/JSONHEAD.HDR"), client);
 	sendPorts(client);
-	client->stop();
-	return 0;
 }
 
-int8_t configRequest(uint8_t method, char * path, EthernetClient * client) {
+void configRequest (uint8_t method, char * path, EthernetClient * client) {
 	fileRequest(F("/JSONHEAD.HDR"), client);
 	sendConfig(client);
-	Serial.println(F("PROBE!"));
-	client->stop();
-	return 0;
+}
+
+void configSet (uint8_t method, char * path, EthernetClient * client) {
+	fileRequest(F("/JSONHEAD.HDR"), client);
+	configure(path);
+	sendConfig(client);
+}
+
+void setOutput (uint8_t method, char * path, EthernetClient * client) {
+	fileRequest(F("/JSONHEAD.HDR"), client);
+	setOutputValue(path);
+	sendPorts(client);
 }

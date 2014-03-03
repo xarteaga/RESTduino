@@ -1,9 +1,10 @@
 #include <Arduino.h>
+#include <SD.h>
 #include <EthernetClient.h>
 
 inline void fileRequest (const __FlashStringHelper* filePathP, EthernetClient * client) {
   #define NBUFF 8
-  #define BUFFLEN 16 // 8*128 = 1024 (Size of packets in bytes)
+  #define BUFFLEN 128 // 8*128 = 1024 (Size of packets in bytes)
   char  filePath[16];
   strcpy_P(filePath, (const prog_char*)filePathP); // Convert File path in RAM path from Flash
   size_t i;                // Counter
@@ -31,66 +32,36 @@ inline void fileRequest (const __FlashStringHelper* filePathP, EthernetClient * 
   }
 }
 
-int8_t serveIndex (uint8_t method, char* path, EthernetClient *client){
-	Serial.println(method);
-	Serial.println(path);
+void serveIndex (uint8_t method, char* path, EthernetClient *client){
 	fileRequest(F("/HTMLHEAD.HDR"), client);
 	fileRequest(F("/INDEX.TXT"), client);
-	client->stop();
-	Serial.println(F("Success!"));
-	return 0;
 }
 
-int8_t serveCss (uint8_t method, char* path, EthernetClient *client){
-	Serial.println(method);
-	Serial.println(path);
+void serveCss (uint8_t method, char* path, EthernetClient *client){
 	fileRequest(F("/CSSHEAD.HDR"), client);
 	fileRequest(F("/BS.CSS"), client);
-	client->stop();
-	return 0;
 }
 
-int8_t serveCssRes (uint8_t method, char* path, EthernetClient *client){
-	Serial.println(method);
-	Serial.println(path);
+void serveCssRes (uint8_t method, char* path, EthernetClient *client){
 	fileRequest(F("/CSSHEAD.HDR"), client);
 	fileRequest(F("/BSR.CSS"), client);
-	client->stop();
-	return 0;
 }
 
-int8_t serveJQuery (uint8_t method, char* path, EthernetClient *client){
-	Serial.println(method);
-	Serial.println(path);
+void serveJQuery (uint8_t method, char* path, EthernetClient *client){
 	fileRequest(F("/JSHEAD.HDR"), client);
 	fileRequest(F("/JQUERY.TXT"), client);
-	client->stop();
-	return 0;
 }
 
-int8_t serveControl (uint8_t method, char* path, EthernetClient *client){
-	Serial.println(method);
-	Serial.println(path);
+void serveControl (uint8_t method, char* path, EthernetClient *client){
 	fileRequest(F("/JSHEAD.HDR"), client);
 	fileRequest(F("/CTRL.TXT"), client);
-	client->stop();
-	return 0;
 }
 
-int8_t serveBs (uint8_t method, char* path, EthernetClient *client){
-	Serial.println(method);
-	Serial.println(path);
+void serveBs (uint8_t method, char* path, EthernetClient *client){
 	fileRequest(F("/JSHEAD.HDR"), client);
 	fileRequest(F("/BSJS.TXT"), client);
-	Serial.println("Success!");
-	client->stop();
-	return 0;
 }
 
-int8_t serveImg (uint8_t method, char* path, EthernetClient *client){
-	Serial.println(method);
-	Serial.println(path);
+void serveImg (uint8_t method, char* path, EthernetClient *client){
 	fileRequest(F("/SHIELD.TXT"), client);
-	client->stop();
-	return 0;
 }

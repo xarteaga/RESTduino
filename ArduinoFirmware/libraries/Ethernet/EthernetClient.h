@@ -5,7 +5,6 @@
 #include "Print.h"
 #include "Client.h"
 #include "IPAddress.h"
-#include <SD.h>
 
 class EthernetClient : public Client {
 

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <EEPROM.h>
+#include <HttpServer.h>
 
 #include "SensorPlatform.h"
 
@@ -54,13 +55,13 @@ void loadConfig() {
 
 	// Check the device name and configuration (first time name setting)
 	char *devName = conf.devName;
-	/*if (!checkDeviceName(devName)) {
+	if (!checkDeviceName(devName)) {
 		Serial.println(F("Warning: Bad status for device name."));
 		for (byte i = 0; i < DEV_NAME_MAX_LEN; i++) {
 			EEPROM.write(_EEPROM_BASE + EEPROM_DEVNAME_PTR(conf) + i,
 					conf.devName[i]);
 		}
-	}*/
+	}
 }
 
 void sendPorts(EthernetClient * client) {
@@ -73,18 +74,22 @@ void sendPorts(EthernetClient * client) {
 	char actBaseOn[] = "_{\"val\":\"On\"}_";
 	char actBaseOff[] = "_{\"val\":\"Off\"}_";
 	char actBaseEmpty[] = "_{\"val\":\"Empty\"}_";
-	const byte outTable[6] = { 11, 10, 9, 6, 5, 3 };
+	const uint8_t outTable[6] = { 11, 10, 9, 6, 5, 3 };
 	short raw;
 	char type;
 	short val;
+	//char * date = "Sun, 02 Mar 2014 18:26:34 GMT";
 
 	client->pushTx("{\"deviceName\":\"");
 	client->pushTx(conf.devName);
+	/*client->pushTx("\,\"date\":\"");
+	client->pushTx(date);*/
 	client->pushTx("\",\"inputs\":");
 	for (char i = 0; i < 6; i++) {
 		raw = inputRawValues.inputs[i]; // Read analog port value
 		type = conf.inputs[i];
-		if (type == _RAW) {
+		switch (type) {
+		case _RAW:
 			baseRaw[0] = (i == 0) ? '[' : ' ';
 			baseRaw[12] = 0x30 + raw % 10;
 			raw /= 10;
@@ -94,7 +99,8 @@ void sendPorts(EthernetClient * client) {
 			baseRaw[9] = 0x30 + raw / 10;
 			baseRaw[15] = (i != 5) ? ',' : ']';
 			client->pushTx(baseRaw);
-		} else if (type == _TEMPERATURE) {
+			break;
+		case _TEMPERATURE:
 			val = (raw * 10) / 4 - 205;
 			baseTemp[0] = (i == 0) ? '[' : ' ';
 			baseTemp[9] = (val < 0) ? '-' : '+';
@@ -106,7 +112,8 @@ void sendPorts(EthernetClient * client) {
 			baseTemp[10] = 0x30 + val / 10;
 			baseTemp[21] = (i != 5) ? ',' : ']';
 			client->pushTx(baseTemp);
-		} else if (type == _POTENCIOMETER) {
+			break;
+		case _POTENCIOMETER:
 			val = (((((raw * 10) >> 3) * 10) >> 3) * 10) >> 4;
 			basePot[0] = (i == 0) ? '[' : ' ';
 			basePot[13] = 0x30 + val % 10;
@@ -117,7 +124,8 @@ void sendPorts(EthernetClient * client) {
 			basePot[9] = 0x30 + val / 10;
 			basePot[18] = (i != 5) ? ',' : ']';
 			client->pushTx(basePot);
-		} else if (type == _LIGHT) {
+			break;
+		case _LIGHT:
 			raw = raw >> 1;
 			baseRaw[0] = (i == 0) ? '[' : ' ';
 			baseRaw[12] = 0x30 + raw % 10;
@@ -128,7 +136,8 @@ void sendPorts(EthernetClient * client) {
 			baseRaw[9] = 0x30 + raw / 10;
 			baseRaw[15] = (i != 5) ? ',' : ']';
 			client->pushTx(baseRaw);
-		} else if (type == _LOGICAL) {
+			break;
+		case _LOGICAL:
 			if (raw > 512) {
 				baseLogical1[0] = (i == 0) ? '[' : ' ';
 				baseLogical1[15] = (i != 5) ? ',' : ']';
@@ -138,17 +147,21 @@ void sendPorts(EthernetClient * client) {
 				baseLogical0[16] = (i != 5) ? ',' : ']';
 				client->pushTx(baseLogical0);
 			}
-		} else {
+			break;
+		default:
 			baseEmpty[0] = (i == 0) ? '[' : ' ';
 			baseEmpty[16] = (i != 5) ? ',' : ']';
 			client->pushTx(baseEmpty);
+			break;
 		}
+
 	}
 	client->pushTx(",\"outputs\":");
 	for (char i = 0; i < 6; i++) {
-		char type = conf.outputs[i];
-		if (type == _LOGICAL) {
-			if (digitalRead(outTable[i]) == 1) {
+		char type = (char)conf.outputs[i];
+		switch (type) {
+		case _LOGICAL:
+			if (digitalRead(outTable[i]) == HIGH) {
 				actBaseOn[0] = (i == 0) ? '[' : ' ';
 				actBaseOn[13] = (i != 5) ? ',' : ']';
 				client->pushTx(actBaseOn);
@@ -157,10 +170,12 @@ void sendPorts(EthernetClient * client) {
 				actBaseOff[14] = (i != 5) ? ',' : ']';
 				client->pushTx(actBaseOff);
 			}
-		} else {
+			break;
+		default:
 			actBaseEmpty[0] = (i == 0) ? '[' : ' ';
 			actBaseEmpty[16] = (i != 5) ? ',' : ']';
 			client->pushTx(actBaseEmpty);
+			break;
 		}
 	}
 	client->pushTx("}\n");
@@ -195,7 +210,7 @@ void configure(uint8_t method, char * path, EthernetClient * client) {
 		EEPROM.write(_EEPROM_BASE + nport + 6, type);
 		break;
 	case _NAME:
-		size_t devNameLen; // Declare the device name length
+		uint8_t devNameLen; // Declare the device name length
 		path++; // Adjust config code pointer
 		/* Look for the end of the name, in case of being longer then DEV_NAME_MAX_LEN-1
 		 * it will be cut to this number. */
@@ -203,14 +218,14 @@ void configure(uint8_t method, char * path, EthernetClient * client) {
 				devNameLen < DEV_NAME_MAX_LEN - 1 && path[devNameLen] != ' ';
 				devNameLen++)
 			;
-		// Copy the Device name in the config structure
+// Copy the Device name in the config structure
 		strncpy(conf.devName, path, devNameLen);
 		conf.devName[devNameLen] = '\0';  // End wil the end string (null) char
 		checkDeviceName(conf.devName);
-		// Copy the device name in the EEPROM
+// Copy the device name in the EEPROM
 		Serial.println(conf.devName);
 
-		for (byte i = 0; i < devNameLen + 1; i++)
+		for (uint8_t i = 0; i < devNameLen + 1; i++)
 			EEPROM.write(
 			_EEPROM_BASE + (size_t) & conf.devName - (size_t) & conf + i,
 					conf.devName[i]);
@@ -223,14 +238,14 @@ void configure(uint8_t method, char * path, EthernetClient * client) {
 	}
 }
 
-void setOutput(uint8_t method, char * path, EthernetClient * client) {
+void setOutputValue(char * path) {
 	const uint8_t outTable[6] = { 11, 10, 9, 6, 5, 3 };
 
 	// Mode the pointer to the beginning of the configuration code
 	path++;
 	while (*path != '/')
 		path++;
-	path += 4;
+	path++;
 	byte nport = *path - 0x30;
 	if (nport > 5)
 		return;
@@ -247,8 +262,7 @@ void setOutput(uint8_t method, char * path, EthernetClient * client) {
 
 void updateValues() {
 	uint8_t i;
-	File file;
-	char fileName[] = "ANX.dat";
+	//File file;
 	unsigned int timeStamp = millis();
 
 	if (timeStamp < inputRawValues.nextTimeStamp)
@@ -258,22 +272,11 @@ void updateValues() {
 	unsigned short int * rawValues = inputRawValues.inputs;
 	for (i = 0; i < 6; i++) {
 		rawValues[i] = analogRead(i);
-		fileName[2] = 0x30 + i;
-		/*file = SD.open(fileName, FILE_WRITE);
-		 if (file) {
-		 file.print(",");
-		 file.print(rawValues[i]);
-		 file.close();
-		 } else {
-		 Serial.print(F("Error opening file: '"));
-		 Serial.print(fileName);
-		 Serial.println(F("'"));
-		 }*/
 	}
+	return;
 }
 
 void sendConfig(EthernetClient * client) {
-	Serial.println(F("--- Config requ ---"));
 	char confBase[] = "_{\"type\":\"X\"}_}";
 	client->pushTx("{\"deviceName\":\"");
 	client->pushTx(conf.devName);
@@ -288,5 +291,82 @@ void sendConfig(EthernetClient * client) {
 		client->pushTx(confBase);
 	}
 	client->flushTx();
-	Serial.println(F("--- Config send ---"));
+}
+
+void configure(char* path) {
+	byte nport, type;
+	char inout;
+
+	// Mode the pointer to the begining of the configuration code
+	path++;
+	while (*path != '/')
+		path++;
+	path++;
+
+	inout = path[0];       // Get the type of port: input, output or device name
+	nport = path[1] - 0x30; // Get the port number (if any)
+	type = path[2];         // Get port configuration
+
+	switch (inout) {
+	case _INPUT:
+		if (nport > 5)
+			return;  // If not valid value, return
+		conf.inputs[nport] = type;
+		EEPROM.write(_EEPROM_BASE + nport, type);
+		break;
+	case _OUTPUT:
+		if (nport > 5)
+			return;  // If not valid value, return
+		conf.outputs[nport] = type;
+		EEPROM.write(_EEPROM_BASE + nport + 6, type);
+		break;
+	case _NAME:
+		byte devNameLen; // Declare the device name length
+		path++; // Adjust config code pointer
+		/* Look for the end of the name, in case of being longer then DEV_NAME_MAX_LEN-1
+		 * it will be cut to this number. */
+		for (devNameLen = 0;
+				devNameLen < DEV_NAME_MAX_LEN - 1 && path[devNameLen] != ' ';
+				devNameLen++)
+			;
+
+		// Copy the Device name in the config structure
+		strncpy(conf.devName, path, devNameLen);
+		conf.devName[devNameLen] = '\0';  // End wil the end string (null) char
+
+		checkDeviceName(conf.devName);
+		Serial.println(F("Warning: Bad status for device name."));
+		for (byte i = 0; i < DEV_NAME_MAX_LEN; i++) {
+			EEPROM.write(_EEPROM_BASE + EEPROM_DEVNAME_PTR(conf) + i,
+					conf.devName[i]);
+		}
+		break;
+	case _ADDR:
+		path++;
+		conf.ip = *path - 0x30;
+		EEPROM.write(_EEPROM_BASE + 12, conf.ip);
+		break;
+	}
+}
+
+void setOutput(char * path) {
+	const byte outTable[6] = { 11, 10, 9, 6, 5, 3 };
+
+	path++;
+	while (*path != '/')
+		path++;
+	path++;
+	path += 4;
+	byte nport = *path - 0x30; // get number of port
+	if (nport > 5)
+		return;
+	path++;
+	switch (*path) {
+	case '0':
+		digitalWrite(outTable[nport], LOW);
+		break;
+	case '1':
+		digitalWrite(outTable[nport], HIGH);
+		break;
+	}
 }

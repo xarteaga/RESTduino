@@ -39,6 +39,9 @@ struct SInputRawValues {
 };
 
 void loadConfig();
+void configure(char * path);
+void setOutputValue(char * path);
+void updateValues();
 void sendPorts(EthernetClient * client);
 void sendConfig(EthernetClient * client);
 

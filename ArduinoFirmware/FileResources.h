@@ -3,18 +3,18 @@
 
 inline void fileRequest (const __FlashStringHelper* filePathP, EthernetClient * client);
 
-int8_t serveIndex (uint8_t method, char* path, EthernetClient *client);
+void serveIndex (uint8_t method, char* path, EthernetClient *client);
 
-int8_t serveCss (uint8_t method, char* path, EthernetClient *client);
+void serveCss (uint8_t method, char* path, EthernetClient *client);
 
-int8_t serveCssRes (uint8_t method, char* path, EthernetClient *client);
+void serveCssRes (uint8_t method, char* path, EthernetClient *client);
 
-int8_t serveJQuery (uint8_t method, char* path, EthernetClient *client);
+void serveJQuery (uint8_t method, char* path, EthernetClient *client);
 
-int8_t serveControl (uint8_t method, char* path, EthernetClient *client);
+void serveControl (uint8_t method, char* path, EthernetClient *client);
 
-int8_t serveBs (uint8_t method, char* path, EthernetClient *client);
+void serveBs (uint8_t method, char* path, EthernetClient *client);
 
-int8_t serveImg (uint8_t method, char* path, EthernetClient *client);
+void serveImg (uint8_t method, char* path, EthernetClient *client);
 
 #endif
