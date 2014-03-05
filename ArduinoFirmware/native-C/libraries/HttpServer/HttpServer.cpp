@@ -4,7 +4,26 @@
 #include <EthernetServer.h>
 #include "HttpServer.h"
 
-int8_t HttpServer::getMethod() {
+const MethodMapper methodMap[] = { { GET, "GET" },
+/*{	POST, meth_post},
+ {	PUT, meth_put},
+ {	PATCH, meth_patch},
+ {	DELETE, meth_delete},
+ {	COPY, meth_copy},
+ {	HEAD, meth_head},
+ {	OPTIONS, meth_options},
+ {	LINK, meth_link},
+ {	UNLINK, meth_unlink},
+ {	PURGE, meth_purge},*/
+{ NONE, "NONE" } };
+
+char path[MAX_PATH];
+EthernetServer server(80);
+EthernetClient client;
+uint8_t numEntries;
+ServerEntry serverEntries[MAX_ENTRIES];
+
+int8_t getMethod() {
 
 	uint8_t i;
 	char method[8];
@@ -26,8 +45,8 @@ int8_t HttpServer::getMethod() {
 	method[i] = '\0';
 
 	// Compare method
-	for (i = 0; methodMap[i].key != 0; i++) {
-		if (strcmp_P(method, (PGM_P) methodMap[i].name) == 0) {
+	for (i = 0; methodMap[i].key != NONE; i++) {
+		if (strcmp(method, methodMap[i].name) == 0) {
 			Serial.print(F("Method: "));
 			Serial.println(method);
 			return methodMap[i].key;
@@ -36,7 +55,7 @@ int8_t HttpServer::getMethod() {
 	return -2;
 }
 
-int8_t HttpServer::getPath() {
+int8_t getPath() {
 	uint8_t i;
 	char c;
 	for (i = 0; i < MAX_PATH && client.connected() && client.available(); i++) {
@@ -61,7 +80,7 @@ int8_t HttpServer::getPath() {
 	return i;
 }
 
-uint8_t HttpServer::getHeaders() {
+uint8_t getHeaders() {
 	uint16_t counter = 0;
 	uint8_t i = 0, headers = 0;
 	char c, line[MAX_LINE_LEN];
@@ -71,12 +90,10 @@ uint8_t HttpServer::getHeaders() {
 		c = client.read();
 		if (c == '\n') {
 			line[i] = '\0';
-			if ((strncmp_P(line,
-					(const prog_char*) F("If-None-Match: contentNotModified"),
-					23) == 0
-					|| strncmp_P(line,
-							(const prog_char*) F("Cache-Control: max-age=0"),
-							23) == 0) && ((headers & _NOT_MODIFIED) == 0)) {
+			//Serial.println(line);
+			if ((strncmp(line, "If-None-Match: contentNotModified", 23) == 0
+					|| strncmp(line, "Cache-Control: max-age=0", 23) == 0)
+					&& ((headers & _NOT_MODIFIED) == 0)) {
 				headers += _NOT_MODIFIED;
 			} else if (i == 0) { // Blank line -> End of header
 				headers += _REQ_OK;
@@ -93,26 +110,25 @@ uint8_t HttpServer::getHeaders() {
 	return headers;
 }
 
-void HttpServer::start(byte * mac, IPAddress ip, IPAddress dns,
-		IPAddress gwAddr, IPAddress subnet, uint16_t port) {
-	uint8_t i;
+void start(uint8_t * mac, uint8_t* ip, uint8_t* dns, uint8_t* gwAddr,
+		uint8_t *subnet, uint16_t port) {
 	Ethernet.begin(mac, ip, dns, gwAddr, subnet);
 	server.setPort(port);
 	Serial.println(F("Starting Server!"));
-	Serial.print(F("    IP: "));
-	Serial.println(ip);
-	Serial.print(F("  Port: "));
-	Serial.println(port);
-	Serial.print(F("    GW: "));
-	Serial.println(gwAddr);
-	Serial.print(F("SubNet: "));
-	Serial.println(subnet);
+	/*Serial.print(F("    IP: "));
+	 Serial.println(ip);
+	 Serial.print(F("  Port: "));
+	 Serial.println(port);
+	 Serial.print(F("    GW: "));
+	 Serial.println(gwAddr);
+	 Serial.print(F("SubNet: "));
+	 Serial.println(subnet);*/
 }
 
-void HttpServer::pushEntry(uint8_t m, const __FlashStringHelper* p, callback_t callback) {
+void pushEntry(uint8_t m, const char* p, callback_t callback) {
 	// Check space
 	if (numEntries >= MAX_ENTRIES)
-	return;
+		return;
 
 	// Push entry
 	ServerEntry entry;
@@ -123,16 +139,16 @@ void HttpServer::pushEntry(uint8_t m, const __FlashStringHelper* p, callback_t c
 	numEntries++;
 }
 
-void HttpServer::proccess() {
-	boolean hit = false;
+void proccess() {
 	uint8_t method, pathLen, i, n, headers;
 
-	// Get client, if not return
 	client = server.available();
 	if (!client)
 		return;
 
-	// Get method	
+	Serial.println(F("Handling request!"));
+
+	// Get method
 	method = getMethod();
 
 	// load path and get pathlen
@@ -141,28 +157,28 @@ void HttpServer::proccess() {
 	// Get headers
 	headers = getHeaders();
 
-	if ((headers & _NOT_MODIFIED) != 0) {
-		client.println("HTTP/1.1 304 - Not Modified\n");
-		delay(10);
-		client.stop();
-		return;
-	}
+	/*if ((headers & _NOT_MODIFIED) != 0) {
+	 client.println("HTTP/1.1 304 - Not Modified\n");
+	 delay(10);
+	 return;
+	 }*/
 
 	// Get backcall
 	for (i = 0; i < numEntries; i++) {
 		ServerEntry entry = serverEntries[i];
-		n = strlen_P((const prog_char*) entry.path);
+		n = strlen(entry.path);
 
-		if (n <= pathLen
-				&& strncmp_P(path, (const prog_char*) entry.path, n) == 0
+		if (n <= pathLen && strncmp(path, entry.path, n) == 0
 				&& method == entry.method) {
-			(*(entry.callback))(method, path, &client);
-			hit = true;
-			break;
+			//(*(entry.callback))(method, path, &client);
+			client.println("HTTP/1.1 304 - Not Modified\n");
+			delay(10);
+			client.stop();
+			return;
 		}
 	}
-	if (!hit)
-		client.println("HTTP/1.1 404 - File not Found\n");
-	Serial.println(F("THNKX!"));
+	client.println("HTTP/1.1 404 - File not Found\n");
+	delay(10);
 	client.stop();
+	Serial.println(F("CLIENT DISCONNECTED!"));
 }

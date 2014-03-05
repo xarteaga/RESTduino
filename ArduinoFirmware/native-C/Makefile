@@ -29,7 +29,7 @@ ARDUINO_LIBS_PATH = $(shell find libraries/* -type d -print)
 # Arduino core headers and sources names
 ###############################################################################
 ARDUINO_CORES = $(wildcard $(ARDUINO_CORE_PATH)/*.c) $(wildcard $(ARDUINO_CORE_PATH)/*/*.c)
-ARDUINO_CORES_XX = $(wildcard $(ARDUINO_CORE_PATH)/*.cpp) $(wildcard $(ARDUINO_CORE_PATH)/*/*.cpp)
+ARDUINO_CORES_XX = $(filter-out /usr/share/arduino/hardware/arduino/cores/arduino//main.cpp,$(wildcard $(ARDUINO_CORE_PATH)/*.cpp))
 
 ARDUINO_LIBS = $(shell find libraries/ -name \*.c)
 ARDUINO_LIBS_XX = $(shell find libraries/ -name \*.cpp)
@@ -46,7 +46,7 @@ AVR_DUDE_LINUX = avrdude -C /usr/share/arduino/hardware/tools/avrdude.conf
 LDFLAGS = $(ARDUINO_OPT) -mmcu=$(ARDUINO_CHIP) -DF_CPU=$(ARDUINO_FCPU) -I$(ARDUINO_CORE_PATH) -I$(ARDUINO_PINS_PATH) $(ARDUINO_LIBS_INC)
 # User Sources
 ###############################################################################
-SOURCES = main.cpp FileResources.cpp DeviceResource.cpp SensorPlatform.cpp
+SOURCES = main.cpp FileResources.cpp #DeviceResource.cpp
 
 # Binary loadable files...
 ###############################################################################

@@ -2,7 +2,14 @@
 #include <SD.h>
 #include <EthernetClient.h>
 
-inline void fileRequest (const __FlashStringHelper* filePathP, EthernetClient * client) {
+int freeRam ()
+{
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
+
+void fileRequest (const __FlashStringHelper* filePathP, EthernetClient * client) {
   #define NBUFF 8
   #define BUFFLEN 128 // 8*128 = 1024 (Size of packets in bytes)
   char  filePath[16];
@@ -11,7 +18,7 @@ inline void fileRequest (const __FlashStringHelper* filePathP, EthernetClient * 
   uint8_t buffer[BUFFLEN]; // Buffer, the data from the SD and Ethernet are comming and going throught
                            // SPI, therefore, it is needed a buffer
   File file = SD.open(filePath);  // Open SD file
-  
+  Serial.println(freeRam());
   if (file) {
     // read from the file until there's nothing else in it:
     while (file.available()) {
@@ -30,6 +37,7 @@ inline void fileRequest (const __FlashStringHelper* filePathP, EthernetClient * 
     Serial.print(filePath);
     Serial.println(F("' not found!"));
   }
+
 }
 
 void serveIndex (uint8_t method, char* path, EthernetClient *client){
