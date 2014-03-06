@@ -71,11 +71,13 @@
             <form onsubmit="event.preventDefault()">
                 <div class="form-group">
                     <label for="startIP">Start IP Address</label>
-                    <input type="text" class="form-control" id="startIP" value="192.168.10.1" onkeydown="if (event.keyCode==13) startDiscovery()">
+                    <input type="text" class="form-control" id="startIP" value="192.168.10.1"
+                           onkeydown="if (event.keyCode==13) startDiscovery()">
                 </div>
                 <div class="form-group">
                     <label for="endIP">Stop IP Address</label>
-                    <input type="text" class="form-control" id="endIP" value="192.168.10.255" onkeydown="if (event.keyCode==13) startDiscovery()">
+                    <input type="text" class="form-control" id="endIP" value="192.168.10.255"
+                           onkeydown="if (event.keyCode==13) startDiscovery()">
                 </div>
                 <div class="input-group">
                     <label class="checkbox"><input type="checkbox" id="showOffline" value="__option__"> Show offline IP
@@ -172,13 +174,13 @@ Device</span>).</p>
     <div class="well">
         <h3>Tips</h3>
 
-        <p>Configure your LOCAL Arduino server IP address. You only can choose among a limited number of IP addresses.
-            After selecting a new IP Address you must reset your Arduino board in order to enforce the new IP address
-            and configure your PC with an IP belonging to the new IP address range. The mask is always 255.255.255.0.
+        <p>Configure your LOCAL Arduino server IP address. You only can choose among a limited number of IP addresses,
+            net masks and server ports. After selecting a new IP Address you must reset your Arduino board in order to
+            enforce the new IP address and configure your PC with an IP belonging to the new IP address range.
         </p>
 
-        <p>You can also change your LOCAL Arduino name or identifier by writing a new name (shorter than 15 characters)
-            and clicking "Change name".</p>
+        <p>You can also change your LOCAL Arduino name or identifier by writing a new name (shorter than 15 characters,
+            without special characters) and clicking "Change name".</p>
     </div>
 </div>
 <div id="confports" class="tab-pane">
@@ -207,7 +209,7 @@ Device</span>).</p>
                         document.write("<li><a onclick='configDevProtected(\"set/i" + i + "l\")'>Light<\/a><\/li>");
                         document.write("<li><a onclick='configDevProtected(\"set/i" + i + "b\")'>Logical<\/a><\/li>");
                         document.write("<li class='divider'><\/li>");
-                        document.write("<li><a onclick='configDevProtected(\'set/i" + i + "e\')'>Empty<\/a><\/li>");
+                        document.write("<li><a onclick='configDevProtected(\"set/i" + i + "e\")'>Void<\/a><\/li>");
                         document.write("<\/ul>");
                         document.write("<\/div>");
                         document.write("<br><br>")
@@ -236,12 +238,17 @@ Device</span>).</p>
             <form align="center">
                 <script type="text/javascript">
                     for (var i = 0; i < 6; i++) {
+
                         document.write("<div class='btn-group'>");
                         document.write("<button id='out" + i + "' data-toggle='dropdown' class='btn btn-default dropdown-toggle' align='right'>Empty <span class='caret'><\/span><\/button>");
                         document.write("<ul class='dropdown-menu'>");
-                        document.write("<li><a onclick='configDevProtected(\"set/o" + i + "b\")'>Logical<\/a><\/li>");
-                        document.write("<li class='divider'><\/li>");
-                        document.write("<li><a onclick='configDevProtected(\"set/o" + i + "e\")'>Empty<\/a><\/li>");
+                        if (i != 0 && i != 1) {
+                            document.write("<li><a onclick='configDevProtected(\"set/o" + i + "b\")'>Logical<\/a><\/li>");
+                            document.write("<li class='divider'><\/li>");
+                            document.write("<li><a onclick='configDevProtected(\"set/o" + i + "e\")'>Void<\/a><\/li>");
+                        } else {
+                            document.write("<li><a>Reserved<\/a><\/li>");
+                        }
                         document.write("<\/ul>");
                         document.write("<\/div>");
                         document.write("<br><br>")
@@ -294,11 +301,13 @@ Device</span>).</p>
             <form onsubmit="event.preventDefault(); startAutoRead()">
                 <div class="form-group input-append">
                     <label for="ipAddress2">IP Address of the device</label>
-                    <input type="text" class="form-control" id="ipAddress2" onkeydown="if (event.keyCode == 13) startAutoRead()">
+                    <input type="text" class="form-control" id="ipAddress2"
+                           onkeydown="if (event.keyCode == 13) startAutoRead()">
                 </div>
                 <div class="form-group">
                     <label for="refreshTime">Refresh time [s]</label>
-                    <input type="number" class="form-control" id="refreshTime" value="5" onkeydown="if (event.keyCode == 13) startAutoRead()">
+                    <input type="number" class="form-control" id="refreshTime" value="5"
+                           onkeydown="if (event.keyCode == 13) startAutoRead()">
                 </div>
                 <div id="startStopButtons">
                     <button id="startRead" type="button"

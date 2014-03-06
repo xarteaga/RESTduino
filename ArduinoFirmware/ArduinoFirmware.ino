@@ -84,7 +84,9 @@ void updateValues (){
   if (timeStamp < inputRawValues.nextTimeStamp)
     return;
     
-  getTime(timeString);
+  if (!getTime(timeString))
+    return;
+    
   for (byte i = 0; i<29; i++){
     EEPROM.write(400+i, timeString[i]);
   }
@@ -176,11 +178,11 @@ byte requestRead () {
   return val;
 }
 
-inline void getTime(char * timeString) {
+inline boolean getTime(char * timeString) {
         char buffer[4];
         if (!client.connect({173,194,34,56}, 80)) {
                 Serial.println(F("Error: Can not get Google Time!"));
-                return;
+                return false;
         }
         client.println(F("GET /gen_204 HTTP/1.1\nConnection: close\n"));
  
@@ -200,15 +202,17 @@ inline void getTime(char * timeString) {
                         
                         // Close connection
                         client.stop();
+                        return true;
                 } else {
                         // Advance the reading pointer
                         while(client.read()!='\n');
                 }
         }
  
-        // Force close if not
-        if (client.connected())
-                client.stop();
+  // Force close if not
+  if (client.connected())
+    client.stop();
+  return false; 
 }
 
 /*****************************************************************************************************
@@ -733,9 +737,47 @@ void loop() {
       fileRequest(htmlHeadPath);
       fileRequest(F("/INDEX.TXT"));
     } else if (strncmp(path, "histX", 4) == 0){
-      fileRequest(jsHeadPath);
-      client.pushTx("[0");
-      fileRequest(F("/AN0.DAT"));
+      switch(path[4]){
+        case '0':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN0.DAT"));
+          break;    
+        case '1':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN1.DAT"));
+          break;
+        case '2':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN2.DAT"));
+          break;
+        case '3':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN3.DAT"));
+          break;
+        case '4':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN4.DAT"));
+          break;
+        case '5':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN5.DAT"));
+          break;
+        case '6':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN6.DAT"));
+          break;
+        default:
+          client.print("HTTP/1.1 404 - File not Found\n");
+          break;          
+      }
+    
       client.pushTx("]");
       client.flushTx();
     } else {
