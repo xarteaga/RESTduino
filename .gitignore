@@ -30,3 +30,6 @@ Node.js/.idea/
 *.iml
 *.db
 *.jar
+
+# Eclipse Arduino firmware project
+ArduinoFirmware/.*

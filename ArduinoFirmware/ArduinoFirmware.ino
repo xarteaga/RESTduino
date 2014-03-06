@@ -1,7 +1,7 @@
 // Definitions
 #define SERIAL_BAUDRATE 115200
 #define REQUEST_MAXBUFFER 30
-#define HEADER_MAXBUFFER 50
+#define HEADER_MAXBUFFER 30
 #define DEV_NAME_MAX_LEN 16
 // Compilation options
 //#define DEBUG_EEPROM
@@ -68,23 +68,42 @@ struct SInputRawValues{
 };
 SInputRawValues inputRawValues;
 
+int freeRam () 
+{
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
+
 void updateValues (){
+  char timeString[29]="nan";
   File file;
-  char fileName [] = "ANX.dat";
+  char fileName [] = "ANX.DAT";
   unsigned int timeStamp = millis();
   
   if (timeStamp < inputRawValues.nextTimeStamp)
     return;
     
-  inputRawValues.nextTimeStamp = timeStamp + 1000;
+  if (!getTime(timeString))
+    return;
+    
+  for (byte i = 0; i<29; i++){
+    EEPROM.write(400+i, timeString[i]);
+  }
+  
+  inputRawValues.nextTimeStamp = timeStamp + 5000;
   unsigned short int * rawValues = inputRawValues.inputs;
   for (byte i = 0; i<6; i++){
     rawValues[i] = analogRead(i);
     fileName[2] = 0x30 + i;
+  
     file = SD.open(fileName, FILE_WRITE);
     if (file){
-      file.print(",");
+      file.print(F(",{\"time\":\""));
+      file.write((uint8_t*)timeString, 29);
+      file.print(F("\",\"value\":"));
       file.print(rawValues[i]);
+      file.print("}");
       file.close();
     } else {
       Serial.print(F("Error opening file: '"));
@@ -92,6 +111,7 @@ void updateValues (){
       Serial.println(F("'"));
     }
   }
+  Serial.println(freeRam());
 }
 
 /*****************************************************************************************************
@@ -132,8 +152,8 @@ byte requestRead () {
       Serial.print(header);
       #endif // PRINT_HEADERS
       #ifdef ALLOW_CACHE
-      if ((strncmp(header, "If-None-Match: contentNotModified", 23)==0 ||
-            strncmp(header, "Cache-Control: max-age=0",23)==0) &&
+      if ((strncmp(header, "If-None-Match: contentNotModified", 23)==0 /*||
+            strncmp(header, "Cache-Control: max-age=0",23)==0*/) &&
             (val & _NOT_MODIFIED) == 0){
         val += _NOT_MODIFIED;
         Serial.println(F("NO MODIFIED DETECTED!"));
@@ -156,6 +176,43 @@ byte requestRead () {
     }
   }
   return val;
+}
+
+inline boolean getTime(char * timeString) {
+        char buffer[4];
+        if (!client.connect({173,194,34,56}, 80)) {
+                Serial.println(F("Error: Can not get Google Time!"));
+                return false;
+        }
+        client.println(F("GET /gen_204 HTTP/1.1\nConnection: close\n"));
+ 
+        // Wait response
+        delay(100);
+ 
+        // Read headers until it finds the Date
+        while (client.connected() && client.available()) {
+                // read buffer
+                client.read((uint8_t*)buffer, 4);
+                // Detect if the response header is the date one
+                if (strncmp(buffer, "Date", 4) == 0) {
+                        // Get date string
+                        client.read();
+                        client.read();
+                        client.read((uint8_t*)timeString, 29);
+                        
+                        // Close connection
+                        client.stop();
+                        return true;
+                } else {
+                        // Advance the reading pointer
+                        while(client.read()!='\n');
+                }
+        }
+ 
+  // Force close if not
+  if (client.connected())
+    client.stop();
+  return false; 
 }
 
 /*****************************************************************************************************
@@ -239,13 +296,17 @@ void portsRequested (){
   char basePot []= "_{\"val\":\"XXX.X %\"}_";
   char baseLogical1 []= "_{\"val\":\"True\"}_";
   char baseLogical0 []= "_{\"val\":\"False\"}_";
-  char baseEmpty []= "_{\"val\":\"Empty\"}_";
+  char baseEmpty []= "_{\"val\":\"Void\"}_";
   char actBaseOn []=    "_{\"val\":\"On\"}_";
   char actBaseOff []=   "_{\"val\":\"Off\"}_";
-  char actBaseEmpty []= "_{\"val\":\"Empty\"}_";
+  char actBaseEmpty []= "_{\"val\":\"Void\"}_";
   const byte outTable [6] = { 11, 10, 9, 6, 5, 3 };
   client.pushTx("{\"deviceName\":\"");
   client.pushTx(conf.devName);
+  client.pushTx("\",\"timestamp\":\"");
+  for (uint8_t i = 0; i<29; i++){
+    client.pushTx(EEPROM.read(400+i));
+  }
   client.pushTx("\",\"inputs\":");
   for (char i = 0; i < 6; i++) {
     short raw = inputRawValues.inputs[i]; // Read analog port value
@@ -306,7 +367,7 @@ void portsRequested (){
       }
     } else {
       baseEmpty[0] = (i==0)?'[':' ';
-      baseEmpty[16] = (i!=5)? ',':']';
+      baseEmpty[15] = (i!=5)? ',':']';
       client.pushTx(baseEmpty);
     }
   }
@@ -325,7 +386,7 @@ void portsRequested (){
       }
     } else {
       actBaseEmpty[0] = (i==0)?'[':' ';
-      actBaseEmpty[16] = (i!=5)? ',':']';
+      actBaseEmpty[15] = (i!=5)? ',':']';
       client.pushTx(actBaseEmpty);
     }
   }
@@ -577,6 +638,27 @@ void setup() {
     Serial.println(F("SD Initialization failed!"));
     while(true)delay(1000);
   }
+
+  File file;
+  char fileName []= "ANX.DAT";
+  for (byte i = 0; i<6; i++){
+    fileName[2] = 0x30 + i;
+    // Remove file
+    SD.remove(fileName);
+    
+    if (SD.exists(fileName)){
+      Serial.print(F("Error removing file "));
+      Serial.println(fileName);
+    }
+    
+    file = SD.open(fileName, FILE_WRITE);
+    file.close();
+    
+    if (!SD.exists(fileName)){
+      Serial.print(F("Error creating file "));
+      Serial.println(fileName);
+    }
+  }
   
   inputRawValues.nextTimeStamp = millis();
 }
@@ -655,9 +737,47 @@ void loop() {
       fileRequest(htmlHeadPath);
       fileRequest(F("/INDEX.TXT"));
     } else if (strncmp(path, "histX", 4) == 0){
-      fileRequest(jsHeadPath);
-      client.pushTx("[0");
-      fileRequest(F("/AN0.DAT"));
+      switch(path[4]){
+        case '0':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN0.DAT"));
+          break;    
+        case '1':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN1.DAT"));
+          break;
+        case '2':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN2.DAT"));
+          break;
+        case '3':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN3.DAT"));
+          break;
+        case '4':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN4.DAT"));
+          break;
+        case '5':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN5.DAT"));
+          break;
+        case '6':
+          fileRequest(jsonHeadPath);
+          client.pushTx("[0");
+          fileRequest(F("/AN6.DAT"));
+          break;
+        default:
+          client.print("HTTP/1.1 404 - File not Found\n");
+          break;          
+      }
+    
       client.pushTx("]");
       client.flushTx();
     } else {
