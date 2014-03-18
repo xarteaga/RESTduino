@@ -16,6 +16,26 @@
         }
 
     </script>
+    <style>
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .x.axis path {
+            display: none;
+        }
+
+        .line {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 1.5px;
+        }
+
+    </style>
 </head>
 <body>
 <div class="navbar navbar-inverse">
@@ -62,6 +82,7 @@
         <br>
         <br></li>
 </ul>
+<div id="modals"></div>
 <div class="tab-content">
 <div id="scandevices" class="tab-pane active">
     <h2>Scan devices</h2>
@@ -390,12 +411,16 @@ Device</span>).</p>
     }
 
     if (document.domain == "" || document.domain == "localhost") {
-        asyncLoadScript('./js/jquery.min.js');
-        asyncLoadScript('./js/bootstrap.min.js');
-        asyncLoadScript('./js/control.js');
+        asyncLoadScript('js/jquery.min.js');
+        asyncLoadScript('js/bootstrap.min.js');
+        asyncLoadScript('http://underscorejs.org/underscore-min.js');
+        asyncLoadScript('http://d3js.org/d3.v3.min.js');
+        asyncLoadScript('js/control.js');
     } else {
         asyncLoadScript('jquery.js');
         asyncLoadScript('bs.js');
+        asyncLoadScript('http://underscorejs.org/underscore-min.js');
+        asyncLoadScript('http://d3js.org/d3.v3.js');
         asyncLoadScript('control.js');
     }
     ;
