@@ -1,3 +1,23 @@
+function responseTabs() {
+    var bottomPadding = "",
+        topPadding = "";
+    if ($(window).width() > 800) {
+        document.getElementById("tabControl").className = "container tabbable tabs-left";
+        for (i = 0; i < 10; i++)bottomPadding += "<br>";
+        for (i = 0; i < 3; i++)topPadding += "<br>";
+    }
+    else {
+        document.getElementById("tabControl").className = "container tabbable";
+    }
+    document.getElementById("tabBottomPadding").innerHTML = bottomPadding;
+    document.getElementById("tabTopPadding").innerHTML = topPadding;
+}
+window.onresize = function () {
+    responseTabs()
+};
+responseTabs();
+
+
 /******************************************************
  *              CONFIGURE Device Port                 *
  ******************************************************/
@@ -610,7 +630,7 @@ function generateModalWindow(identifier) {
     modal += "<button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>";
     modal += "<h4 class='modal-title' id='modal" + identifier + "Label'>" + "TITLE" + "</h4>";
     modal += ("</div>");
-    modal += ("<div class='modal-body'>");
+    modal += ("<div id='modal-body" + identifier + "' class='modal-body'>");
     modal += ("<div id='loadinggif" + i + "' style='text-align:center;'><img src='https://github.com/xarteaga/RESTduino/blob/864de606cb76de2b70070e79729b9716ef1cb570/UserGUI/img/loading.gif?raw=true'/></div>");
     modal += ("<div id='graph" + i + "' style='width:530px; height:0px;'></div>");
     modal += ("</div>");
@@ -669,13 +689,16 @@ function plotGraph(input, type) {
 
     var graphdiv = document.getElementById("graph" + input);
     graphdiv.innerHTML = "";
-    graphdiv.style.height = "400px";
-    document.getElementById("loadinggif" + input).innerHTML = "<img src='https://github.com/xarteaga/RESTduino/blob/864de606cb76de2b70070e79729b9716ef1cb570/UserGUI/img/loading.gif?raw=true'/>"
+    graphdiv.style.height = $(window).height*0.75 + "px";
+
+    document.getElementById("loadinggif" + input).innerHTML = "<img src='https://github.com/xarteaga/RESTduino/blob/864de606cb76de2b70070e79729b9716ef1cb570/UserGUI/img/loading.gif?raw=true'/>";
     document.getElementById("modal" + input + "Label").innerHTML = "Analog input " + input;
+    document.getElementById("modal" + input).style.cssText = "width:"+ $(window).width()*0.9 + "px;margin-left:" +  (-$(window).width()*0.9/2) + "px;";
+    document.getElementById("modal-body" + input).style.height = $(window).height()*0.9 + "px";
 
     var margin = {top: 20, right: 20, bottom: 30, left: 50},
-        width = 650 - margin.left - margin.right,
-        height = 400 - margin.top - margin.bottom;
+        width = $(window).width()*0.9 -50 - margin.left - margin.right,
+        height = $(window).height()*0.9 - 200 - margin.top - margin.bottom;
 
     // Data pattern example: Thu, 06 Mar 2014 09:13:21 GMT
     var parseDate = d3.time.format("%a, %d %b %Y %H:%M:%S GMT").parse;

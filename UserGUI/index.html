@@ -7,17 +7,32 @@
     <meta name="description" content="Geomatics for Biological Systems">
     <meta name="author" content="X. Arteaga; J. Olmos">
     <script type='text/javascript'>
-        if (document.domain == "" || document.domain == "localhost") {
-            document.write("<link href='css/bootstrap.min.css' rel='stylesheet'>");
-            //document.write("<link href='css/bootstrap-responsive.min.css' rel='stylesheet'>")
-        } else {
-            document.write("<link href='bs.css' rel='stylesheet'>");
-            document.write("<link href='bs-res.css' rel='stylesheet'>")
+        /**
+         * Stylesheets loader with redundant sources
+         * @param url Is the URL to the priority resource (normally to the original file in the CDN)
+         * @param url2 Is teh secondary resource which is loaded in case of fail of the first (normally the local one or 'null' if none).
+         */
+        function asyncLoadStyle(url, url2) {
+            var tag = document.createElement("link");
+            tag.rel = "stylesheet";
+            tag.type = "text/css";
+            tag.href = url;
+            tag.async = false;
+            if (url2 != null) // If not 'null' load the second file in case of error.
+                tag.onerror = function () {
+                    asyncLoadStyle(url2, null);
+                };
+            document.getElementsByTagName('head')[0].appendChild(tag);
         }
-
+        if (document.domain == "" || document.domain == "localhost") {
+            asyncLoadStyle('http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.no-icons.min.css', 'css/bootstrap.min.css');
+        } else {
+            asyncLoadStyle('http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.no-icons.min.css', 'bs.css');
+            asyncLoadStyle('http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.no-icons.min.css', 'bs-res.css');
+        }
     </script>
+    <!-- Style for D3 graphs -->
     <style>
-
         .axis path,
         .axis line {
             fill: none;
@@ -34,9 +49,10 @@
             stroke: steelblue;
             stroke-width: 1.5px;
         }
-
     </style>
 </head>
+
+<!-- BODY -->
 <body>
 <div class="navbar navbar-inverse">
     <div class="navbar-inner">
@@ -57,12 +73,10 @@
         </div>
     </div>
 </div>
-<div class="container tabbable tabs-left">
+<div id="modals"></div>
+<div id="tabControl" class="container tabbable">
 <ul class="nav nav-tabs">
-    <li style="list-style: none"><br>
-        <br>
-        <br>
-        <br></li>
+    <div id="tabTopPadding"></div>
     <li class="active"><a href="#scandevices" data-toggle="tab"
                           onclick="stopAutoRead()">Scan devices</a></li>
     <li><a href="#confdev" data-toggle="tab" onclick=
@@ -71,18 +85,8 @@
             "stopAutoRead()">Ports</a></li>
     <li><a href="#monitor" data-toggle="tab" onclick=
             "stopAutoRead()">Monitor</a></li>
-    <li style="list-style: none"><br>
-        <br>
-        <br>
-        <br>
-        <br>
-        <br>
-        <br>
-        <br>
-        <br>
-        <br></li>
+    <div id="tabBottomPadding"></div>
 </ul>
-<div id="modals"></div>
 <div class="tab-content">
 <div id="scandevices" class="tab-pane active">
     <h2>Scan devices</h2>
@@ -216,7 +220,6 @@ Device</span>).</p>
     <div class="row-fluid">
         <div class="span2 offset2"><br>
             <br>
-
             <form id="inputs" align="center" onsubmit="event.preventDefault()">
                 <script type="text/javascript">
                     for (var i = 0; i < 6; i++) {
@@ -235,17 +238,29 @@ Device</span>).</p>
                         document.write("<br><br>")
                     }
                     ;
-
                 </script>
             </form>
         </div>
         <div class="span4" align="center">
             <h3 id="devName"><i>Not connected</i></h3>
+            <div id="shieldContainer"></div>
             <script type='text/javascript'>
+                function asyncLoadImage(url, url2) {
+                    var tag = document.createElement("img");
+                    tag.src = url;
+                    tag.align = "middle";
+                    tag.alt = "TinkerKit Shield";
+                    tag.async = false;
+                    if (url2 != null) // If not 'null' load the second file in case of error.
+                        tag.onerror = function () {
+                            asyncLoadStyle(url2, null);
+                        };
+                    document.getElementById('shieldContainer').appendChild(tag);
+                }
                 if (document.domain == "" || document.domain == "localhost") {
-                    document.write("<img src='./img/tinkershield.jpg' align='middle' alt='some_text'>")
+                    asyncLoadImage('https://github.com/xarteaga/RESTduino/blob/master/UserGUI/img/tinkershield.jpg?raw=true', 'img/tinkershield.jpg');
                 } else {
-                    document.write("<img src='shield.jpg' align='middle' alt='some_text'>")
+                    asyncLoadImage('https://github.com/xarteaga/RESTduino/blob/master/UserGUI/img/tinkershield.jpg?raw=true', 'shield.jpg');
                 }
                 ;
 
@@ -402,26 +417,30 @@ Device</span>).</p>
 
 <script type="text/javascript">
 
-    function asyncLoadScript(url) {
+    function asyncLoadScript(url, url2) {
         var tag = document.createElement("script");
         tag.type = "text/javascript";
         tag.src = url;
         tag.async = false;
+        if (url2 != null)
+            tag.onerror = function () {
+                asyncLoadScript(url2, null);
+            };
         document.getElementsByTagName('head')[0].appendChild(tag);
     }
 
     if (document.domain == "" || document.domain == "localhost") {
-        asyncLoadScript('js/jquery.min.js');
-        asyncLoadScript('js/bootstrap.min.js');
-        asyncLoadScript('http://underscorejs.org/underscore-min.js');
-        asyncLoadScript('http://d3js.org/d3.v3.min.js');
-        asyncLoadScript('js/control.js');
+        asyncLoadScript('http://code.jquery.com/jquery-1.10.1.min.js', 'js/jquery.min.js');
+        asyncLoadScript('http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js', 'js/bootstrap.min.js');
+        asyncLoadScript('http://underscorejs.org/underscore-min.js', null);
+        asyncLoadScript('http://d3js.org/d3.v3.js', null);
+        asyncLoadScript('js/control.js', null);
     } else {
-        asyncLoadScript('jquery.js');
-        asyncLoadScript('bs.js');
-        asyncLoadScript('http://underscorejs.org/underscore-min.js');
-        asyncLoadScript('http://d3js.org/d3.v3.js');
-        asyncLoadScript('control.js');
+        asyncLoadScript('http://code.jquery.com/jquery-1.10.1.min.js', 'jquery.js');
+        asyncLoadScript('http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js', 'bs.js');
+        asyncLoadScript('http://underscorejs.org/underscore-min.js', null);
+        asyncLoadScript('http://d3js.org/d3.v3.js', null);
+        asyncLoadScript('control.js', null);
     }
     ;
 

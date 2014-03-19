@@ -99,11 +99,11 @@ void updateValues (){
   
     file = SD.open(fileName, FILE_WRITE);
     if (file){
-      file.print(F(",{\"time\":\""));
+      file.print(F(",{\"date\":\""));
       file.write((uint8_t*)timeString, 29);
-      file.print(F("\",\"value\":"));
+      file.print(F("\",\"value\":\""));
       file.print(rawValues[i]);
-      file.print("}");
+      file.print("\"}");
       file.close();
     } else {
       Serial.print(F("Error opening file: '"));
@@ -178,13 +178,13 @@ byte requestRead () {
   return val;
 }
 
-inline boolean getTime(char * timeString) {
+boolean getTime(char * timeString) {
         char buffer[4];
         if (!client.connect({173,194,34,56}, 80)) {
                 Serial.println(F("Error: Can not get Google Time!"));
                 return false;
         }
-        client.println(F("GET /gen_204 HTTP/1.1\nConnection: close\n"));
+        client.println("GET /gen_204 HTTP/1.1\nConnection: close\n");
  
         // Wait response
         delay(100);
@@ -291,15 +291,10 @@ void setOutput (char * cmd) {
  *                                 ALL Sensors values Request (JSON)                                 *
  *****************************************************************************************************/
 void portsRequested (){
-  char baseRaw []= "_{\"val\":\"XXXX\"}_";
-  char baseTemp []= "_{\"val\":\"+XXX.X ºC\"}_"; // || {"val":"+068.0 ºC"},||
-  char basePot []= "_{\"val\":\"XXX.X %\"}_";
-  char baseLogical1 []= "_{\"val\":\"True\"}_";
-  char baseLogical0 []= "_{\"val\":\"False\"}_";
+  char base []= "_{\"type\":\"X\",\"val\":\"XXXX\"}_";
   char baseEmpty []= "_{\"val\":\"Void\"}_";
   char actBaseOn []=    "_{\"val\":\"On\"}_";
   char actBaseOff []=   "_{\"val\":\"Off\"}_";
-  char actBaseEmpty []= "_{\"val\":\"Void\"}_";
   const byte outTable [6] = { 11, 10, 9, 6, 5, 3 };
   client.pushTx("{\"deviceName\":\"");
   client.pushTx(conf.devName);
@@ -310,66 +305,16 @@ void portsRequested (){
   client.pushTx("\",\"inputs\":");
   for (char i = 0; i < 6; i++) {
     short raw = inputRawValues.inputs[i]; // Read analog port value
-    char type = conf.inputs[i];
-    if (type == _RAW) {
-        baseRaw[0] = (i==0)?'[':' ';
-        baseRaw[12] = 0x30 + raw%10;
-        raw /= 10;
-        baseRaw[11] = 0x30 + raw%10;
-        raw /= 10;
-        baseRaw[10] = 0x30 + raw%10;
-        baseRaw[9] = 0x30 + raw/10;
-        baseRaw[15] = (i!=5) ? ',':']';
-        client.pushTx(baseRaw);
-    } else if (type == _TEMPERATURE) {
-        short temp = (raw*10)/4 - 205;
-        baseTemp[0] = (i==0)?'[':' ';
-        baseTemp[9] = (temp < 0)?'-':'+';
-        baseTemp[14] = 0x30 + temp%10;
-        temp /= 10;
-        baseTemp[12] = 0x30 + temp%10;
-        temp /= 10;
-        baseTemp[11] = 0x30 + temp%10;
-        baseTemp[10] = 0x30 + temp/10;
-        baseTemp[21] = (i!=5)? ',':']';
-        client.pushTx(baseTemp);
-    } else if (type == _POTENCIOMETER) {
-      short percent = (((((raw*10)>>3)*10)>>3)*10)>>4;
-      basePot[0] = (i==0)?'[':' ';
-      basePot[13] = 0x30 + percent%10;
-      percent /= 10;
-      basePot[11] = 0x30 + percent%10;
-      percent /= 10;
-      basePot[10] = 0x30 + percent%10;
-      basePot[9] = 0x30 + percent/10;
-      basePot[18] = (i!=5)? ',':']';
-      client.pushTx(basePot);
-    } else if (type == _LIGHT) {
-      raw = raw >> 1;
-      baseRaw[0] = (i==0)?'[':' ';
-      baseRaw[12] = 0x30 + raw%10;
-      raw /= 10;
-      baseRaw[11] = 0x30 + raw%10;
-      raw /= 10;
-      baseRaw[10] = 0x30 + raw%10;
-      baseRaw[9] = 0x30 + raw/10;
-      baseRaw[15] = (i!=5) ? ',':']';
-      client.pushTx(baseRaw);
-    } else if (type == _LOGICAL) {
-      if (raw > 512){
-        baseLogical1[0] = (i==0)?'[':' ';
-        baseLogical1[15] = (i!=5)? ',':']';
-        client.pushTx(baseLogical1);
-      } else {
-        baseLogical0[0] = (i==0)?'[':' ';
-        baseLogical0[16] = (i!=5)? ',':']';
-        client.pushTx(baseLogical0);
-      }
-    } else {
-      baseEmpty[0] = (i==0)?'[':' ';
-      baseEmpty[15] = (i!=5)? ',':']';
-      client.pushTx(baseEmpty);
-    }
+    base[0] = (i==0)?'[':' ';
+    base[10] = conf.inputs[i]; // type
+    base[23] = 0x30 + raw%10; // Units
+    raw /= 10;
+    base[22] = 0x30 + raw%10; // Decs
+    raw /= 10;
+    base[21] = 0x30 + raw%10; // Hundreds
+    base[20] = 0x30 + raw/10; // Thousands
+    base[sizeof(base)-2] = (i!=5) ? ',':']';
+    client.pushTx(base);
   }
   client.pushTx(",\"outputs\":");
   for (char i = 0; i < 6; i++) {
@@ -385,9 +330,9 @@ void portsRequested (){
         client.pushTx(actBaseOff);
       }
     } else {
-      actBaseEmpty[0] = (i==0)?'[':' ';
-      actBaseEmpty[15] = (i!=5)? ',':']';
-      client.pushTx(actBaseEmpty);
+      baseEmpty[0] = (i==0)?'[':' ';
+      baseEmpty[15] = (i!=5)? ',':']';
+      client.pushTx(baseEmpty);
     }
   }
   client.pushTx("}\n");
@@ -482,6 +427,29 @@ boolean checkDeviceName (char * devName){
   }
   devName[i] = 0; // Force End 
   return false;
+}
+
+inline void resetHistory(){
+    File file;
+  char fileName []= "ANX.DAT";
+  for (byte i = 0; i<6; i++){
+    fileName[2] = 0x30 + i;
+    // Remove file
+    SD.remove(fileName);
+    
+    if (SD.exists(fileName)){
+      Serial.print(F("Error removing file "));
+      Serial.println(fileName);
+    }
+    
+    file = SD.open(fileName, FILE_WRITE);
+    file.close();
+    
+    if (!SD.exists(fileName)){
+      Serial.print(F("Error creating file "));
+      Serial.println(fileName);
+    }
+  }
 }
 
 /*****************************************************************************************************
@@ -636,29 +604,9 @@ void setup() {
   digitalWrite(10, HIGH);
   if (!SD.begin(4)) {
     Serial.println(F("SD Initialization failed!"));
-    while(true)delay(1000);
   }
 
-  File file;
-  char fileName []= "ANX.DAT";
-  for (byte i = 0; i<6; i++){
-    fileName[2] = 0x30 + i;
-    // Remove file
-    SD.remove(fileName);
-    
-    if (SD.exists(fileName)){
-      Serial.print(F("Error removing file "));
-      Serial.println(fileName);
-    }
-    
-    file = SD.open(fileName, FILE_WRITE);
-    file.close();
-    
-    if (!SD.exists(fileName)){
-      Serial.print(F("Error creating file "));
-      Serial.println(fileName);
-    }
-  }
+  resetHistory();
   
   inputRawValues.nextTimeStamp = millis();
 }
@@ -719,25 +667,33 @@ void loop() {
     } else if (strncmp(path, "bs.css", 6) == 0){
       fileRequest(cssHeadPath);
       fileRequest(F("/BS.CSS"));
-    } else if (strncmp(path, "bs-res.css", 10) == 0){
+    } else if (strncmp(path, "bs-res", 6) == 0){
       fileRequest(cssHeadPath);
       fileRequest(F("/BSR.CSS"));
-    } else if (strncmp(path, "jquery.js", 9) == 0){
+    } else if (strncmp(path, "jquery", 6) == 0){
       fileRequest(jsHeadPath);
       fileRequest(F("/JQUERY.TXT"));
-    } else if (strncmp(path, "control.js", 10) == 0){
+    } else if (strncmp(path, "control", 7) == 0){
       fileRequest(jsHeadPath);
       fileRequest(F("/CTRL.TXT"));
     } else if (strncmp(path, "bs.js", 5) == 0){
       fileRequest(jsHeadPath);
       fileRequest(F("/BSJS.TXT"));
-    } else if (strncmp(path, "shield.jpg", 5) == 0){
+    } else if (strncmp(path, "shield", 6) == 0){
       fileRequest(F("/SHIELD.TXT"));
     } else if (*path == ' '){
       fileRequest(htmlHeadPath);
       fileRequest(F("/INDEX.TXT"));
+    /*}  else if (strncmp_P(path, "graph", 5) == 0){
+      fileRequest(htmlHeadPath);
+      fileRequest(F("/GRAPH.TXT"));*/
     } else if (strncmp(path, "histX", 4) == 0){
       switch(path[4]){
+        case 'r':
+          resetHistory();
+          fileRequest(jsonHeadPath);
+          portsRequested();
+          break;  
         case '0':
           fileRequest(jsonHeadPath);
           client.pushTx("[0");
