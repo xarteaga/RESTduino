@@ -168,7 +168,6 @@ Device</span>).</p>
     <h2>Configure device IP and Name</h2>
 
     <form onsubmit="event.preventDefault()"><label>New name for the device</label>
-
         <div class='btn-group'>
             <button id='setNewIp' data-toggle='dropdown'
                     class='btn btn-default dropdown-toggle' align='right' value=''>New
@@ -193,6 +192,27 @@ Device</span>).</p>
             <button type="button submit" class="btn btn-info">
                 Change Name
             </button>
+        </div>
+    </form>
+    <form onsubmit="event.preventDefault()"><label>Sampling Time</label>
+        <div class='btn-group'>
+            <button id='setNewSamplingTime' data-toggle='dropdown'
+                    class='btn btn-default dropdown-toggle' align='right' value=''>New sampling time
+            </button>
+            <ul class='dropdown-menu'>
+                <li><a type="button" onclick=
+                        'configDevProtected("set/t0")'>1 second</a></li>
+                <li><a type="button" onclick=
+                        'configDevProtected("set/t1")'>5 seconds</a></li>
+                <li><a type="button" onclick=
+                        'configDevProtected("set/t2")'>10 seconds</a></li>
+                <li><a type="button" onclick=
+                        'configDevProtected("set/t3")'>1 minute</a></li>
+                <li><a type="button" onclick=
+                        'configDevProtected("set/t4")'>5 minute</a></li>
+                <li><a type="button" onclick=
+                        'configDevProtected("set/t5")'>10 minute</a></li>
+            </ul>
         </div>
     </form>
     <div class="well">

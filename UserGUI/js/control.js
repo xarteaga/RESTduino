@@ -551,39 +551,75 @@ function showPorts(txtPort) {
  *                     Update CONFIG                  *
  ******************************************************/
 function showConfig(txtConfig) {
+    var ctrl;
+
     if (typeof(txtConfig) != "object")
         config = JSON.parse(txtConfig);
     else
         config = txtConfig;
 
+    // Set Arduino Name
     document.getElementById("devName").innerHTML = config.deviceName.replace("_", " ").replace("%20", " ");
+    document.getElementById("newName").placeholder = config.deviceName.replace("_", " ").replace("%20", " ");
+
+    // Set IP Address
+    ctrl = document.getElementById("setNewIp");
     switch (config.ip) {
         case "1":
-            document.getElementById("setNewIp").innerHTML = "192.168.10.130:8080/26 <span class='caret'></span>";
-            if (document.getElementById("setNewIp").value == "")
-                document.getElementById("setNewIp").value = "192.168.10.130";
+            ctrl.innerHTML = "192.168.10.130:8080/26 <span class='caret'></span>";
+            if (ctrl.value == "")
+                ctrl.value = "192.168.10.130";
             break;
         case "2":
-            document.getElementById("setNewIp").innerHTML = "10.0.1.2:80/24 <span class='caret'></span>";
-            if (document.getElementById("setNewIp").value == "")
-                document.getElementById("setNewIp").value = "10.0.1.2";
+            ctrl.innerHTML = "10.0.1.2:80/24 <span class='caret'></span>";
+            if (ctrl.value == "")
+                ctrl.value = "10.0.1.2";
             break;
         case "3":
-            document.getElementById("setNewIp").innerHTML = "10.0.1.130:8080/26 <span class='caret'></span>";
-            if (document.getElementById("setNewIp").value == "")
-                document.getElementById("setNewIp").value = "10.0.1.130";
+            ctrl.innerHTML = "10.0.1.130:8080/26 <span class='caret'></span>";
+            if (ctrl.value == "")
+                ctrl.value = "10.0.1.130";
             break;
         default:
-            document.getElementById("setNewIp").innerHTML = "192.168.10.2:80/24 <span class='caret'></span>";
-            if (document.getElementById("setNewIp").value == "")
-                document.getElementById("setNewIp").value = "192.168.10.2";
+            ctrl.innerHTML = "192.168.10.2:80/24 <span class='caret'></span>";
+            if (ctrl.value == "")
+                ctrl.value = "192.168.10.2";
             break;
     }
 
+    // Set Sampling Time
+    ctrl = document.getElementById("setNewSamplingTime");
+    switch (config.samplingTime){
+        case "0":
+            ctrl.innerHTML = "1 second";
+            break;
+        case "1":
+            ctrl.innerHTML = "5 seconds";
+            break;
+        case "2":
+            ctrl.innerHTML = "10 seconds";
+            break;
+        case "3":
+            ctrl.innerHTML = "1 minute";
+            break;
+        case "4":
+            ctrl.innerHTML = "5 minutes";
+            break;
+        case "5":
+            ctrl.innerHTML = "10 minutes";
+            break;
+        default:
+            ctrl.innerHTML = "1 second";
+            break;
+    }
+
+    // Set Inputs
     for (i = 0; i < 6; i++) {
         type = config.ports[i].type;
         configDevice("an" + i, type);
     }
+
+    // Set Outputs
     for (i = 6; i < 12; i++) {
         type = config.ports[i].type;
         configDevice("out" + (i - 6), type);

@@ -32,11 +32,12 @@ EthernetServer server = EthernetServer(80);
 // EEPROM BASE ADDR
 #define _EEPROM_BASE   0x10
 
-// Define input/output
+// Define input/output/name/address/samplingtime config sufixes
 #define _INPUT         'i'
 #define _OUTPUT        'o'
 #define _NAME          'n'
 #define _ADDR          'a'
+#define _SAMPT         't'
 
 // Analog inputs
 #define _EMPTY         'e'
@@ -53,12 +54,21 @@ EthernetServer server = EthernetServer(80);
 #define _REQ_OK        0x01
 #define _NOT_MODIFIED  0x02
 
+// Sampling time definitions
+#define TS_0 1000 /* 1 Second */
+#define TS_1 5000 /* 5 Seconds */
+#define TS_2 10000 /* 10 Seconds */
+#define TS_3 60000 /* 1 minute */
+#define TS_4 300000 /* 5 minute */
+#define TS_5 600000 /* 10 minute */
+
 // Configuration structure
 struct Configuration{
   char inputs [6];
   char outputs [6];
   byte ip;
   char devName[DEV_NAME_MAX_LEN];
+  byte samplingTime;
 };
 Configuration conf;
 
@@ -91,7 +101,30 @@ void updateValues (){
     EEPROM.write(400+i, timeString[i]);
   }
   
-  inputRawValues.nextTimeStamp = timeStamp + 5000;
+  switch(conf.samplingTime){
+    case '0':
+      inputRawValues.nextTimeStamp = timeStamp + TS_0;   
+      break;
+    case '1':
+      inputRawValues.nextTimeStamp = timeStamp + TS_1;   
+      break;
+    case '2':
+      inputRawValues.nextTimeStamp = timeStamp + TS_2;   
+      break;
+    case '3':
+      inputRawValues.nextTimeStamp = timeStamp + TS_3;   
+      break;
+    case '4':
+      inputRawValues.nextTimeStamp = timeStamp + TS_4;   
+      break;
+    case '5':
+      inputRawValues.nextTimeStamp = timeStamp + TS_5;   
+      break;
+    default:
+      inputRawValues.nextTimeStamp = timeStamp + TS_1;   
+      break;
+  }
+  
   unsigned short int * rawValues = inputRawValues.inputs;
   for (byte i = 0; i<6; i++){
     rawValues[i] = analogRead(i);
@@ -264,6 +297,10 @@ void configure (char* code){
       conf.ip = *code - 0x30;
       EEPROM.write(_EEPROM_BASE + 12, conf.ip);
       break;
+    case _SAMPT:
+      code ++;
+      conf.samplingTime = *code;
+      EEPROM.write(_EEPROM_BASE + ((size_t)&conf.samplingTime - (size_t)&conf), *code);
   }
 }
 
@@ -348,6 +385,8 @@ void confRequest (){
   client.pushTx(conf.devName);
   client.pushTx("\",\"ip\":\"");
   client.pushTx(0x30 + conf.ip);
+  client.pushTx("\",\"samplingTime\":\"");
+  client.pushTx((char)conf.samplingTime);
   client.pushTx("\",\"ports\":");
   for (char i=0; i<12; i++){
     confBase [0] = (i==0)?'[':' ';
@@ -379,6 +418,10 @@ void fileRequest (const __FlashStringHelper* filePathP) {
         // Read BUFFLEN characters and push it in the Socket buffer
         client.pushTx(buffer, file.read(buffer, BUFFLEN));
       }
+      
+      if (!client.connected())
+        break;
+        
       // Empty the tx buffer (send buffered data)
       client.flushTx();
     }
@@ -476,6 +519,10 @@ void setup() {
         EEPROM.write(_EEPROM_BASE + (size_t)&conf.devName-(size_t)&conf + i, conf.devName[i]);
     }
   }
+
+  // Check the sampling time is bounded
+  if (conf.samplingTime>'9' || conf.samplingTime<'0')
+    conf.samplingTime = '0';
 
   /* Uncomment next line to reset network Addr */
   //configure("//a0");
