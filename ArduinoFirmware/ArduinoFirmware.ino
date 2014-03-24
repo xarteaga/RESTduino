@@ -38,6 +38,7 @@ EthernetServer server = EthernetServer(80);
 #define _NAME          'n'
 #define _ADDR          'a'
 #define _SAMPT         't'
+#define _PACK          'p'
 
 // Analog inputs
 #define _EMPTY         'e'
@@ -62,6 +63,12 @@ EthernetServer server = EthernetServer(80);
 #define TS_4 300000 /* 5 minute */
 #define TS_5 600000 /* 10 minute */
 
+// Packet length definitions
+#define LEN_0 4 /* 4 x 128 = 512 */
+#define LEN_1 6 /* 6 x 128 = 768 */
+#define LEN_2 8 /* 8 x 128 = 1024 */
+#define LEN_3 10 /* 10 x 128 = 1280 */
+
 // Configuration structure
 struct Configuration{
   char inputs [6];
@@ -69,6 +76,7 @@ struct Configuration{
   byte ip;
   char devName[DEV_NAME_MAX_LEN];
   byte samplingTime;
+  byte packetSize;
 };
 Configuration conf;
 
@@ -301,6 +309,12 @@ void configure (char* code){
       code ++;
       conf.samplingTime = *code;
       EEPROM.write(_EEPROM_BASE + ((size_t)&conf.samplingTime - (size_t)&conf), *code);
+      break;
+    case _PACK:
+      code++;
+      conf.packetSize = *code;
+      EEPROM.write(_EEPROM_BASE + ((size_t)&conf.packetSize - (size_t)&conf), *code);
+      break;
   }
 }
 
@@ -387,6 +401,8 @@ void confRequest (){
   client.pushTx(0x30 + conf.ip);
   client.pushTx("\",\"samplingTime\":\"");
   client.pushTx((char)conf.samplingTime);
+  client.pushTx("\",\"packetSize\":\"");
+  client.pushTx((char)conf.packetSize);
   client.pushTx("\",\"ports\":");
   for (char i=0; i<12; i++){
     confBase [0] = (i==0)?'[':' ';
@@ -402,7 +418,7 @@ void confRequest (){
  *                                            File request                                           *
  *****************************************************************************************************/
 void fileRequest (const __FlashStringHelper* filePathP) {
-  #define NBUFF 8
+  uint8_t packLen;
   #define BUFFLEN 128 // 8*128 = 1024 (Size of packets in bytes)
   char  filePath[16];
   strcpy_P(filePath, (const prog_char*)filePathP); // Convert File path in RAM path from Flash
@@ -411,10 +427,26 @@ void fileRequest (const __FlashStringHelper* filePathP) {
                            // SPI, therefore, it is needed a buffer
   File file = SD.open(filePath);  // Open SD file
   
+  // Get packet length
+  switch(conf.packetSize){
+     case '0':
+       packLen = 4;
+       break;
+     case '1':
+       packLen = 6;
+       break;
+     case '2':
+       packLen = 8;
+       break;
+     default:
+       packLen = 10;
+       break;
+  }
+  
   if (file) {
     // read from the file until there's nothing else in it:
     while (file.available()) {
-      for (i = 0; i < NBUFF && file.available(); i++){
+      for (i = 0; i < packLen && file.available(); i++){
         // Read BUFFLEN characters and push it in the Socket buffer
         client.pushTx(buffer, file.read(buffer, BUFFLEN));
       }
@@ -523,6 +555,10 @@ void setup() {
   // Check the sampling time is bounded
   if (conf.samplingTime>'9' || conf.samplingTime<'0')
     conf.samplingTime = '0';
+    
+    // Check the packet size is bounded
+  if (conf.packetSize>'9' || conf.packetSize<'0')
+    conf.packetSize = '0';
 
   /* Uncomment next line to reset network Addr */
   //configure("//a0");
