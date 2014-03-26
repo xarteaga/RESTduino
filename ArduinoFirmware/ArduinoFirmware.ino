@@ -1,7 +1,7 @@
 // Definitions
 #define SERIAL_BAUDRATE 115200
 #define REQUEST_MAXBUFFER 30
-#define HEADER_MAXBUFFER 30
+#define HEADER_MAXBUFFER 24
 #define DEV_NAME_MAX_LEN 16
 // Compilation options
 //#define DEBUG_EEPROM
@@ -56,18 +56,18 @@ EthernetServer server = EthernetServer(80);
 #define _NOT_MODIFIED  0x02
 
 // Sampling time definitions
-#define TS_0 1000 /* 1 Second */
-#define TS_1 5000 /* 5 Seconds */
-#define TS_2 10000 /* 10 Seconds */
-#define TS_3 60000 /* 1 minute */
-#define TS_4 300000 /* 5 minute */
-#define TS_5 600000 /* 10 minute */
+#define TS_0 1 /* 1 Second */
+#define TS_1 2 /* 5 Seconds */
+#define TS_2 10 /* 10 Seconds */
+#define TS_3 60 /* 1 minute */
+#define TS_4 300 /* 5 minute */
+#define TS_5 600 /* 10 minute */
 
 // Packet length definitions
-#define LEN_0 4 /* 4 x 128 = 512 */
-#define LEN_1 6 /* 6 x 128 = 768 */
-#define LEN_2 8 /* 8 x 128 = 1024 */
-#define LEN_3 10 /* 10 x 128 = 1280 */
+#define LEN_0 8 /* 8 x 64 = 512 */
+#define LEN_1 12 /* 12 x 64 = 768 */
+#define LEN_2 16 /* 16 x 64 = 1024 */
+#define LEN_3 20 /* 20 x 64 = 1280 */
 
 // Configuration structure
 struct Configuration{
@@ -81,10 +81,13 @@ struct Configuration{
 Configuration conf;
 
 struct SInputRawValues{
-  unsigned int nextTimeStamp;
+  unsigned int nextSecond;
+  uint16_t second;
+  uint16_t nextTimeStamp;
   unsigned short int inputs [6];
+  char timeString[30];
 };
-SInputRawValues inputRawValues;
+SInputRawValues values;
 
 int freeRam () 
 {
@@ -94,46 +97,49 @@ int freeRam ()
 }
 
 void updateValues (){
-  char timeString[29]="nan";
   File file;
   char fileName [] = "ANX.DAT";
   unsigned int timeStamp = millis();
   
-  if (timeStamp < inputRawValues.nextTimeStamp)
+  if (timeStamp < values.nextSecond)
     return;
-    
-  if (!getTime(timeString))
-    return;
-    
-  for (byte i = 0; i<29; i++){
-    EEPROM.write(400+i, timeString[i]);
-  }
+  values.nextSecond = timeStamp + 1000;
+  values.second ++;
+  Serial.println(values.second);
   
+  if (values.second < values.nextTimeStamp)
+    return;
+    
+  // Get date
+  if (!getTime())
+    strcpy(values.timeString, "nan");
+    
+    
+  Serial.write((uint8_t*)values.timeString, 29);Serial.println("");
+  
+  Serial.println((char)conf.samplingTime);
   switch(conf.samplingTime){
-    case '0':
-      inputRawValues.nextTimeStamp = timeStamp + TS_0;   
-      break;
     case '1':
-      inputRawValues.nextTimeStamp = timeStamp + TS_1;   
+      values.nextTimeStamp = values.second + TS_1;   
       break;
     case '2':
-      inputRawValues.nextTimeStamp = timeStamp + TS_2;   
+      values.nextTimeStamp = values.second + TS_2;   
       break;
     case '3':
-      inputRawValues.nextTimeStamp = timeStamp + TS_3;   
+      values.nextTimeStamp = values.second + TS_3;   
       break;
     case '4':
-      inputRawValues.nextTimeStamp = timeStamp + TS_4;   
+      values.nextTimeStamp = values.second + TS_4;   
       break;
     case '5':
-      inputRawValues.nextTimeStamp = timeStamp + TS_5;   
+      values.nextTimeStamp = values.second + TS_5;   
       break;
     default:
-      inputRawValues.nextTimeStamp = timeStamp + TS_1;   
+      values.nextTimeStamp = values.second + TS_0;   
       break;
   }
   
-  unsigned short int * rawValues = inputRawValues.inputs;
+  unsigned short int * rawValues = values.inputs;
   for (byte i = 0; i<6; i++){
     rawValues[i] = analogRead(i);
     fileName[2] = 0x30 + i;
@@ -141,7 +147,7 @@ void updateValues (){
     file = SD.open(fileName, FILE_WRITE);
     if (file){
       file.print(F(",{\"date\":\""));
-      file.write((uint8_t*)timeString, 29);
+      file.print(values.timeString);
       file.print(F("\",\"value\":\""));
       file.print(rawValues[i]);
       file.print("\"}");
@@ -219,7 +225,7 @@ byte requestRead () {
   return val;
 }
 
-boolean getTime(char * timeString) {
+boolean getTime() {
         char buffer[4];
         if (!client.connect({173,194,34,56}, 80)) {
                 Serial.println(F("Error: Can not get Google Time!"));
@@ -239,8 +245,8 @@ boolean getTime(char * timeString) {
                         // Get date string
                         client.read();
                         client.read();
-                        client.read((uint8_t*)timeString, 29);
-                        
+                        client.read((uint8_t*)values.timeString, 29);
+                        values.timeString[29] = '\0';
                         // Close connection
                         client.stop();
                         return true;
@@ -350,12 +356,10 @@ void portsRequested (){
   client.pushTx("{\"deviceName\":\"");
   client.pushTx(conf.devName);
   client.pushTx("\",\"timestamp\":\"");
-  for (uint8_t i = 0; i<29; i++){
-    client.pushTx(EEPROM.read(400+i));
-  }
+  client.pushTx(values.timeString);
   client.pushTx("\",\"inputs\":");
   for (char i = 0; i < 6; i++) {
-    short raw = inputRawValues.inputs[i]; // Read analog port value
+    short raw = values.inputs[i]; // Read analog port value
     base[0] = (i==0)?'[':' ';
     base[10] = conf.inputs[i]; // type
     base[23] = 0x30 + raw%10; // Units
@@ -419,14 +423,17 @@ void confRequest (){
  *****************************************************************************************************/
 void fileRequest (const __FlashStringHelper* filePathP) {
   uint8_t packLen;
-  #define BUFFLEN 128 // 8*128 = 1024 (Size of packets in bytes)
+  #define BUFFLEN 64 // 8*128 = 1024 (Size of packets in bytes)
   char  filePath[16];
   strcpy_P(filePath, (const prog_char*)filePathP); // Convert File path in RAM path from Flash
   size_t i;                // Counter
   uint8_t buffer[BUFFLEN]; // Buffer, the data from the SD and Ethernet are comming and going throught
                            // SPI, therefore, it is needed a buffer
   File file = SD.open(filePath);  // Open SD file
-  
+#ifdef VERBOSE
+  Serial.print(F("Sending file -> Free memory: "));
+  Serial.println(freeRam());
+#endif
   // Get packet length
   switch(conf.packetSize){
      case '0':
@@ -488,15 +495,7 @@ boolean checkDeviceName (char * devName){
         return true;
       // Invalid character
       Serial.println(devName);
-      devName[0] = 'W';
-      devName[1] = 'e';
-      devName[2] = 'b';
-      devName[3] = 'd';
-      devName[4] = 'u';
-      devName[5] = 'i';
-      devName[6] = 'n';
-      devName[7] = 'o';
-      devName[8] = '\0';
+      strcpy(devName, "Default_Name");
       return false;
     }
   }
@@ -538,17 +537,31 @@ void setup() {
   Serial.begin(SERIAL_BAUDRATE);
   Serial.println(F("--- Arduino Ethernet Debug interface ---"));
 
+  if (analogRead(0)>900){
+    Serial.println("RESET DETECTED!");
+    for(byte i = 0; i<sizeof(Configuration);i++)
+    EEPROM.write(_EEPROM_BASE + i, 0);
+  }
+
   // Setup ports configuration
   byte* confptr = (byte*)&conf;
   for (byte i=0; i<sizeof(Configuration); i++){
     confptr[i] = EEPROM.read(_EEPROM_BASE + i);
   }
   
-  // Check the device name and configuration (first time name setting)
-  char *devName = conf.devName;
-  if (!checkDeviceName(devName)){
-    for (byte i = 0; i<DEV_NAME_MAX_LEN; i++){
-        EEPROM.write(_EEPROM_BASE + (size_t)&conf.devName-(size_t)&conf + i, conf.devName[i]);
+  // Check the device inputs
+  for (byte i = 0; i<6; i++){
+    if (conf.inputs[i]>'z'||conf.inputs[i]<'a'){
+        conf.inputs[i] = 'e';
+        EEPROM.write(_EEPROM_BASE + (size_t)conf.inputs+i-(size_t)&conf, conf.inputs[i]);
+    }
+  }
+  
+  // Check the device outputs
+  for (byte i = 0; i<6; i++){
+    if (conf.outputs[i]>'z'||conf.outputs[i]<'a'){
+        conf.outputs[i] = 'e';
+        EEPROM.write(_EEPROM_BASE + (size_t)conf.outputs+i-(size_t)&conf, conf.outputs[i]);
     }
   }
 
@@ -556,19 +569,25 @@ void setup() {
   if (conf.samplingTime>'9' || conf.samplingTime<'0')
     conf.samplingTime = '0';
     
-    // Check the packet size is bounded
+  // Check the packet size is bounded
   if (conf.packetSize>'9' || conf.packetSize<'0')
     conf.packetSize = '0';
+    
+  // Check the IP address size is bounded
+  if (conf.ip > 9 || conf.ip<0)
+    conf.ip = 0;
 
-  /* Uncomment next line to reset network Addr */
-  //configure("//a0");
+  // Check the device name and configuration (first time name setting)
+  checkDeviceName(conf.devName);
+  for (byte i = 0; i<DEV_NAME_MAX_LEN; i++){
+      EEPROM.write(_EEPROM_BASE + (size_t)&conf.devName-(size_t)&conf + i, conf.devName[i]);
+  }
 
   // start the Ethernet connection and the server:
   byte ipAddr [4];
   byte gwAddr [4];
   byte subnet [4];
   byte dns[4] = {147, 83, 2, 3};
-  byte i;
   uint16_t port = 0;
   
   if (conf.ip==1){ /* --- NETWORK CONFIGURATION 1 --- */
@@ -659,13 +678,13 @@ void setup() {
   Serial.print(F(":"));
   Serial.println(port);
   Serial.print(F("Gateway: "));
-  for (i = 0; i<4; i++){
+  for (byte i = 0; i<4; i++){
     Serial.print(gwAddr[i]);
     if (i!=3)
       Serial.print(F("."));
   }
   Serial.print(F("\nNetmask: "));
-  for (i = 0; i<4; i++){
+  for (byte i = 0; i<4; i++){
     Serial.print(subnet[i]);
     if (i!=3)
       Serial.print(F("."));
@@ -689,9 +708,11 @@ void setup() {
     Serial.println(F("SD Initialization failed!"));
   }
 
+  // Reset Data logger
   resetHistory();
   
-  inputRawValues.nextTimeStamp = millis();
+  // Reset data logger timing
+  values.nextSecond = millis();
 }
 
 void loop() {
@@ -707,6 +728,7 @@ void loop() {
   client = server.available();
   char* path = request;
 
+  // Check if somebody if any client is connected
   if (!client)
     return;
     
@@ -767,9 +789,6 @@ void loop() {
     } else if (*path == ' '){
       fileRequest(htmlHeadPath);
       fileRequest(F("/INDEX.TXT"));
-    /*}  else if (strncmp_P(path, "graph", 5) == 0){
-      fileRequest(htmlHeadPath);
-      fileRequest(F("/GRAPH.TXT"));*/
     } else if (strncmp(path, "histX", 4) == 0){
       switch(path[4]){
         case 'r':
