@@ -689,16 +689,17 @@ function plotGraph(input, type) {
 
     var graphdiv = document.getElementById("graph" + input);
     graphdiv.innerHTML = "";
-    graphdiv.style.height = $(window).height*0.75 + "px";
+    graphdiv.style.height = $(window).height * 0.75 + "px";
 
     document.getElementById("loadinggif" + input).innerHTML = "<img src='https://github.com/xarteaga/RESTduino/blob/864de606cb76de2b70070e79729b9716ef1cb570/UserGUI/img/loading.gif?raw=true'/>";
     document.getElementById("modal" + input + "Label").innerHTML = "Analog input " + input;
-    document.getElementById("modal" + input).style.cssText = "width:"+ $(window).width()*0.9 + "px;margin-left:" +  (-$(window).width()*0.9/2) + "px;";
-    document.getElementById("modal-body" + input).style.height = $(window).height()*0.9 + "px";
+    document.getElementById("modal" + input).style.cssText = "width:" + $(window).width() * 0.9 + "px;margin-left:" + (-$(window).width() * 0.9 / 2) + "px;";
+    document.getElementById("modal-body" + input).style.maxHeight = $(window).height()*0.5 + 100 + "px";
+    document.getElementById("graph" + input).style.height = $(window).height() * 0.5 + 100 +  "px";
 
     var margin = {top: 20, right: 20, bottom: 30, left: 50},
-        width = $(window).width()*0.9 -50 - margin.left - margin.right,
-        height = $(window).height()*0.9 - 200 - margin.top - margin.bottom;
+        width = $(window).width() * 0.9 - 50 - margin.left - margin.right,
+        height = $(window).height() * 0.9 - 200 - margin.top - margin.bottom;
 
     // Data pattern example: Thu, 06 Mar 2014 09:13:21 GMT
     var parseDate = d3.time.format("%a, %d %b %Y %H:%M:%S GMT").parse;
@@ -735,10 +736,14 @@ function plotGraph(input, type) {
     d3.json(url, function (data) {
         document.getElementById("loadinggif" + input).innerHTML = "";
         data.splice(0, 1);
-        data.forEach(function (d, index) {
-            d.date = parseDate(d.date);
-            d.value = conversion(+d.value);
-        });
+        for (var i = 0; i < data.length; i++) {
+            if (data[i].date == "nan") {
+                data.splice(i, 1);
+            } else {
+                data[i].date = parseDate(data[i].date);
+                data[i].value = conversion(+data[i].value);
+            }
+        }
 
         x.domain(d3.extent(data, function (d) {
             return d.date;
