@@ -215,6 +215,23 @@ Device</span>).</p>
             </ul>
         </div>
     </form>
+    <form onsubmit="event.preventDefault()"><label>Packets payload size</label>
+        <div class='btn-group'>
+            <button id='setPayloadSize' data-toggle='dropdown'
+                    class='btn btn-default dropdown-toggle' align='right' value=''>New Packet Size [bytes]
+            </button>
+            <ul class='dropdown-menu'>
+                <li><a type="button" onclick=
+                        'configDevProtected("set/p0")'>512 Bytes</a></li>
+                <li><a type="button" onclick=
+                        'configDevProtected("set/p1")'>768 Bytes</a></li>
+                <li><a type="button" onclick=
+                        'configDevProtected("set/p2")'>1024 Bytes</a></li>
+                <li><a type="button" onclick=
+                        'configDevProtected("set/p3")'>1280 Bytes</a></li>
+            </ul>
+        </div>
+    </form>
     <div class="well">
         <h3>Tips</h3>
 

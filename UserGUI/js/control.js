@@ -587,29 +587,46 @@ function showConfig(txtConfig) {
             break;
     }
 
+    // Set Payload size
+    ctrl = document.getElementById("setPayloadSize");
+    switch (config.ip) {
+        case "0":
+            ctrl.innerHTML = "512 Bytes <span class='caret'></span>";
+            break;
+        case "1":
+            ctrl.innerHTML = "768 Bytes <span class='caret'></span>";
+            break;
+        case "2":
+            ctrl.innerHTML = "1024 Bytes <span class='caret'></span>";
+            break;
+        default:
+            ctrl.innerHTML = "1280 Bytes <span class='caret'></span>";
+            break;
+    }
+
     // Set Sampling Time
     ctrl = document.getElementById("setNewSamplingTime");
     switch (config.samplingTime){
         case "0":
-            ctrl.innerHTML = "1 second";
+            ctrl.innerHTML = "1 second <span class='caret'></span>";
             break;
         case "1":
-            ctrl.innerHTML = "5 seconds";
+            ctrl.innerHTML = "5 seconds <span class='caret'></span>";
             break;
         case "2":
-            ctrl.innerHTML = "10 seconds";
+            ctrl.innerHTML = "10 seconds <span class='caret'></span>";
             break;
         case "3":
-            ctrl.innerHTML = "1 minute";
+            ctrl.innerHTML = "1 minute <span class='caret'></span>";
             break;
         case "4":
-            ctrl.innerHTML = "5 minutes";
+            ctrl.innerHTML = "5 minutes <span class='caret'></span>";
             break;
         case "5":
-            ctrl.innerHTML = "10 minutes";
+            ctrl.innerHTML = "10 minutes <span class='caret'></span>";
             break;
         default:
-            ctrl.innerHTML = "1 second";
+            ctrl.innerHTML = "1 second <span class='caret'></span>";
             break;
     }
 
