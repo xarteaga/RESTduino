@@ -2,7 +2,6 @@
 #define	_SOCKET_H_
 
 #include "w5100.h"
-#include "SD.h"
 
 extern uint8_t socket(SOCKET s, uint8_t protocol, uint16_t port, uint8_t flag); // Opens a socket(TCP or UDP or IP_RAW mode)
 extern void close(SOCKET s); // Close socket
@@ -10,13 +9,10 @@ extern uint8_t connect(SOCKET s, uint8_t * addr, uint16_t port); // Establish TC
 extern void disconnect(SOCKET s); // disconnect the connection
 extern uint8_t listen(SOCKET s);	// Establish TCP connection (Passive connection)
 extern uint16_t send(SOCKET s, const uint8_t * buf, uint16_t len); // Send data (TCP)
-extern uint16_t recv(SOCKET s, uint8_t * buf, uint16_t len);	// Receive data (TCP)
+extern int16_t recv(SOCKET s, uint8_t * buf, int16_t len);	// Receive data (TCP)
 extern uint16_t peek(SOCKET s, uint8_t *buf);
 extern uint16_t sendto(SOCKET s, const uint8_t * buf, uint16_t len, uint8_t * addr, uint16_t port); // Send data (UDP/IP RAW)
 extern uint16_t recvfrom(SOCKET s, uint8_t * buf, uint16_t len, uint8_t * addr, uint16_t *port); // Receive data (UDP/IP RAW)
-extern uint16_t sFlushTx(uint8_t s);
-extern uint16_t sendFile(uint8_t s, File * f);
-uint16_t sPushTx(uint8_t s, const uint8_t * buf, uint16_t len, uint16_t data_offset);
 extern uint16_t igmpsend(SOCKET s, const uint8_t * buf, uint16_t len);
 
 // Functions to allow buffered UDP send (i.e. where the UDP datagram is built up over a
@@ -39,6 +35,10 @@ uint16_t bufferData(SOCKET s, uint16_t offset, const uint8_t* buf, uint16_t len)
   @return 1 if the datagram was successfully sent, or 0 if there was an error
 */
 int sendUDP(SOCKET s);
+
+/* Xavier Arteaga */
+extern uint16_t sPushTx(SOCKET s, const uint8_t *buf, uint16_t len, uint16_t data_offset);
+extern uint8_t sFlushTx(SOCKET s);
 
 #endif
 /* _SOCKET_H_ */

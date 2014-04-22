@@ -79,7 +79,7 @@
     <div id="tabTopPadding"></div>
     <li class="active"><a href="#scandevices" data-toggle="tab"
                           onclick="stopAutoRead()">Scan devices</a></li>
-    <li><a href="#confdev" data-toggle="tab" onclick=
+    <li id="cofDevTabBtn"><a href="#confdev" data-toggle="tab" onclick=
             "stopAutoRead()">Configure Device</a></li>
     <li><a href="#confports" data-toggle="tab" onclick=
             "stopAutoRead()">Ports</a></li>
@@ -167,7 +167,7 @@ Device</span>).</p>
 <div id="confdev" class="tab-pane">
     <h2>Configure device IP and Name</h2>
 
-    <form onsubmit="event.preventDefault()"><label>New name for the device</label>
+    <form onsubmit="event.preventDefault()"><label>Network interface configuration (IPv4:port/mask)</label>
         <div class='btn-group'>
             <button id='setNewIp' data-toggle='dropdown'
                     class='btn btn-default dropdown-toggle' align='right' value=''>New
@@ -186,8 +186,7 @@ Device</span>).</p>
         </div>
     </form>
     <form onsubmit="event.preventDefault(); configDevProtected('set/n' + document.getElementById('newName').value.replace(' ', '_').substring(0,15))">
-        <div class="form-group input-append"><label for="newName">New name
-            for the device</label> <input type="text" class="form-control" id=
+        <div class="form-group input-append"><label for="newName">Device name</label> <input type="text" class="form-control" id=
                 "newName" placeholder="My Arduino">
             <button type="button submit" class="btn btn-info">
                 Change Name

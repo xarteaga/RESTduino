@@ -170,7 +170,7 @@ function createCORSRequest(method, url) {
  *          Configure device in same domain           *
  ******************************************************/
 function configDevProtected(path) {
-    if (document.domain != document.getElementById("setNewIp").value) {
+    if (document.domain != document.getElementById("setNewIp").value || document.domain != document.getElementById("ipAddress").value) {
         window.alert("This functionality is only available for computers inside server network! (Address: '" + document.getElementById("setNewIp").value + "')");
         return;
     }
@@ -448,11 +448,11 @@ function ping(ip, callback) {
 
 function raw2celsius(raw) {
     rb = 10000; // Resistance 1
-    res = 1013; // ADC Resolution
+    res = 1023; // ADC Resolution
     beta = 3950.0;
-    ginf = 120.15;
-    kelvin = 273.15;
-    rth = rb * (res / raw - 1);
+    ginf = 120.6685;
+    kelvin = 273.15+4;
+    rth = rb * (res / (raw/8.0) - 1);
 
     temp = beta / Math.log(rth * ginf);
     return (temp - kelvin).toFixed(1);
@@ -461,6 +461,8 @@ function raw2celsius(raw) {
 function raw2percent(raw) {
     min = 10;
     max = 895;
+
+    raw = raw/8.0;
 
     if (raw < min)
         return 0.0;
@@ -473,6 +475,10 @@ function raw2percent(raw) {
 function raw2light(raw) {
     min = 170;
     max = 761;
+
+    raw = raw/8.0;
+
+
 
     if (raw < min)
         return 0.0;
@@ -510,16 +516,16 @@ function showPorts(txtPort) {
                 value = raw2light(value) + " % of light";
                 break;
             case "r": // Raw
-                value = value;
+                value = (value/8.0).toFixed(1);
                 break;
             case "b": // Binary (Switch/Button)
-                if (value > 512)
+                if (value/8.0 > 512)
                     value = "On";
                 else
                     value = "Off";
                 break;
             default: // Unknown or empty/void
-                value = "Empty"
+                value = "Void"
                 break;
         }
         tableContent += "<tr><td style='text-align:center;'>" + port + "</td><td style='text-align:center;'>" + value + "</td>";
@@ -589,7 +595,7 @@ function showConfig(txtConfig) {
 
     // Set Payload size
     ctrl = document.getElementById("setPayloadSize");
-    switch (config.ip) {
+    switch (config.packetSize) {
         case "0":
             ctrl.innerHTML = "512 Bytes <span class='caret'></span>";
             break;
@@ -640,6 +646,12 @@ function showConfig(txtConfig) {
     for (i = 6; i < 12; i++) {
         type = config.ports[i].type;
         configDevice("out" + (i - 6), type);
+    }
+
+    if (document.domain != document.getElementById("setNewIp").value || document.domain != document.getElementById("ipAddress").value) {
+        document.getElementById("cofDevTabBtn").style.display = 'none';
+    } else {
+        document.getElementById("cofDevTabBtn").style.display = 'block';
     }
 }
 
@@ -735,24 +747,24 @@ function plotGraph(input, type) {
             maximum = 1023;
             minimum = 0;
             conversion = function (value) {
-                return value;
+                return value/8.0;
             };
             break;
     }
 
-    var graphdiv = document.getElementById("graph" + input);
-    graphdiv.innerHTML = "";
-    graphdiv.style.height = $(window).height * 0.75 + "px";
+    var windowheigh = $(window).height()*0.50;
+
+    var graphdiv = document.getElementById("graph" + input).innerHTML = "";
 
     document.getElementById("loadinggif" + input).innerHTML = "<img src='https://github.com/xarteaga/RESTduino/blob/864de606cb76de2b70070e79729b9716ef1cb570/UserGUI/img/loading.gif?raw=true'/>";
     document.getElementById("modal" + input + "Label").innerHTML = "Analog input " + input;
     document.getElementById("modal" + input).style.cssText = "width:" + $(window).width() * 0.9 + "px;margin-left:" + (-$(window).width() * 0.9 / 2) + "px;";
-    document.getElementById("modal-body" + input).style.maxHeight = $(window).height()*0.5 + 100 + "px";
-    document.getElementById("graph" + input).style.height = $(window).height() * 0.5 + 100 +  "px";
+    document.getElementById("modal-body" + input).style.maxHeight = windowheigh  + "px";
+    document.getElementById("graph" + input).style.height = windowheigh +  "px";
 
     var margin = {top: 20, right: 20, bottom: 30, left: 50},
-        width = $(window).width() * 0.9 - 50 - margin.left - margin.right,
-        height = $(window).height() * 0.9 - 200 - margin.top - margin.bottom;
+        width = $(window).width()*0.90 - 50 - margin.left - margin.right,
+        height = windowheigh - margin.top - margin.bottom;
 
     // Data pattern example: Thu, 06 Mar 2014 09:13:21 GMT
     var parseDate = d3.time.format("%a, %d %b %Y %H:%M:%S GMT").parse;
@@ -792,6 +804,7 @@ function plotGraph(input, type) {
         for (var i = 0; i < data.length; i++) {
             if (data[i].date == "nan") {
                 data.splice(i, 1);
+                i--;
             } else {
                 data[i].date = parseDate(data[i].date);
                 data[i].value = conversion(+data[i].value);

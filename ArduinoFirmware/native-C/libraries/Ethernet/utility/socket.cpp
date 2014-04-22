@@ -142,10 +142,10 @@ uint16_t send(SOCKET s, const uint8_t * buf, uint16_t len)
  * 		
  * @return	received data size for success else -1.
  */
-uint16_t recv(SOCKET s, uint8_t *buf, uint16_t len)
+int16_t recv(SOCKET s, uint8_t *buf, int16_t len)
 {
   // Check how much data is available
-  uint16_t ret = W5100.getRXReceivedSize(s);
+  int16_t ret = W5100.getRXReceivedSize(s);
   if ( ret == 0 )
   {
     // No data available.
@@ -397,30 +397,40 @@ int sendUDP(SOCKET s)
   return 1;
 }
 
-uint16_t sPushTx(uint8_t s, const uint8_t * buf, uint16_t len, uint16_t data_offset)
+
+uint16_t sPushTx(SOCKET s, const uint8_t *buf, uint16_t len, uint16_t data_offset)
 {
-  // copy data
-  W5100.send_data_processing_offset(s, data_offset, (uint8_t *)buf, len);
-  return len;
+  uint8_t status=0;
+  uint16_t ret=0;
+  uint16_t freesize=0;
+
+  if (len > W5100.SSIZE) ret = W5100.SSIZE; // check size not to exceed MAX size (2048 bytes)
+  else ret = len;
+
+  do {
+      freesize = W5100.getTXFreeSize(s);
+      status = W5100.readSnSR(s);
+      if ((status != SnSR::ESTABLISHED) && (status != SnSR::CLOSE_WAIT)) {
+         ret = 0; 
+         break;
+      }
+  } while (freesize < ret); // wait until there is enough free buffer for data
+
+  W5100.send_data_processing_offset(s, data_offset, (uint8_t *)buf, ret);  // copy data to W5100 memory buffer
+  return ret;
 }
 
-uint16_t sFlushTx(uint8_t s)
+
+uint8_t sFlushTx(SOCKET s)
 {
-  // 
   W5100.execCmdSn(s, Sock_SEND);
 
-  /* +2008.01 bj */
-  while ( (W5100.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK ) 
-  {
-    /* m2008.01 [bj] : reduce code */
-    if ( W5100.readSnSR(s) == SnSR::CLOSED )
-    {
+  while ((W5100.readSnIR(s) & SnIR::SEND_OK) != SnIR::SEND_OK) {  // wait until data is sent
+    if (W5100.readSnSR(s) == SnSR::CLOSED) {
       close(s);
       return 0;
     }
   }
-  /* +2008.01 bj */
   W5100.writeSnIR(s, SnIR::SEND_OK);
   return 1;
 }
-

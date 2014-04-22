@@ -96,6 +96,15 @@ int freeRam ()
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
 }
 
+void getRawValues (){
+    unsigned short int * rawValues = values.inputs;
+  for (byte i = 0; i<6; i++){
+    rawValues[i] = 0;
+    for (byte j=0; j<8; j++)
+      rawValues[i] += analogRead(i);
+  }
+}
+
 void updateValues (){
   File file;
   char fileName [] = "ANX.DAT";
@@ -138,10 +147,9 @@ void updateValues (){
       values.nextTimeStamp = values.second + TS_0;   
       break;
   }
-  
+  getRawValues();
   unsigned short int * rawValues = values.inputs;
   for (byte i = 0; i<6; i++){
-    rawValues[i] = analogRead(i);
     fileName[2] = 0x30 + i;
   
     file = SD.open(fileName, FILE_WRITE);
@@ -537,11 +545,41 @@ void setup() {
   Serial.begin(SERIAL_BAUDRATE);
   Serial.println(F("--- Arduino Ethernet Debug interface ---"));
 
-  if (analogRead(0)>900){
-    Serial.println("RESET DETECTED!");
-    for(byte i = 0; i<sizeof(Configuration);i++)
-    EEPROM.write(_EEPROM_BASE + i, 0);
+  // Setup outputs
+  for (byte i = 0; i < 6; i++){
+    pinMode(outTable[i], OUTPUT);
   }
+
+  for (byte an = 0; an<6; an++)
+    if (analogRead(an)>904){
+      Serial.println("RESET DETECTED!");
+      for(byte i = 0; i<sizeof(Configuration);i++)
+        EEPROM.write(_EEPROM_BASE + i, 0);
+      for (byte out = 0; out < 6; out ++){
+        digitalWrite(outTable[out], HIGH);
+      }
+      delay(200);
+      for (byte out = 0; out < 6; out ++){
+        digitalWrite(outTable[out], LOW);
+      }
+      delay(200);
+      for (byte out = 0; out < 6; out ++){
+        digitalWrite(outTable[out], HIGH);
+      }
+      delay(200);
+      for (byte out = 0; out < 6; out ++){
+        digitalWrite(outTable[out], LOW);
+      }
+      delay(200);
+      for (byte out = 0; out < 6; out ++){
+        digitalWrite(outTable[out], HIGH);
+      }
+      delay(200);
+      for (byte out = 0; out < 6; out ++){
+        digitalWrite(outTable[out], LOW);
+      }
+      break;
+    }
 
   // Setup ports configuration
   byte* confptr = (byte*)&conf;
@@ -644,6 +682,24 @@ void setup() {
     subnet[3] = 192;
     // Port 8080
     port = 8080;
+  } else if (conf.ip==4){
+    // Ip Address 10.0.1.130
+    ipAddr[0] = 192;
+    ipAddr[1] = 168;
+    ipAddr[2] = 1;
+    ipAddr[3] = 2;
+    // Gateway Address 10.0.1.129
+    gwAddr[0] = 192;
+    gwAddr[1] = 168;
+    gwAddr[2] = 1;
+    gwAddr[3] = 1;
+    // Subnet Mask 255.255.255.192 (/26)
+    subnet[0] = 255;
+    subnet[1] = 255;
+    subnet[2] = 255;
+    subnet[3] = 0;
+    // Port 8080
+    port = 80;
   } else { /* --- NETWORK CONFIGURATION 0 --- */
     // Ip Address 192.168.10.2
     ipAddr[0] = 192;
@@ -695,11 +751,6 @@ void setup() {
   Serial.print(F("Device name: "));
   Serial.print(conf.devName);
   Serial.print('\n');
-  
-  // Setup outputs
-  for (byte i = 0; i < 6; i++){
-    pinMode(outTable[i], OUTPUT);
-  }
  
   // Create SD
   digitalWrite(10, LOW);
@@ -753,6 +804,7 @@ void loop() {
         Serial.println(F("Sending not modified"));
         client.print("HTTP/1.1 304 - Not Modified\n");
     } else if (strncmp(path, "ports", 5) == 0) {
+      getRawValues();
       fileRequest(jsonHeadPath);
       portsRequested();
     } else if (strncmp(path, "config", 6) == 0){
