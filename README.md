@@ -59,33 +59,33 @@ The paths begining with "/set/" is used for configure the board.
 
 |     Path       |                             Description                            |
 |----------------|--------------------------------------------------------------------|
-| /set/i0t       | Set the input 0 as temperature type. The 0 can be changed to any   |
-|                | other input port (0-5) and the 't' to any type (t, p, l, b, r, r). |
-|                |                                                                    |
-| /set/o2b       | Set the output 2 as logic output. The 2 can be changed to any other|
-|                | available output (2-5). The available types are logic ('b') and    |
-|                | Void/Empty/NoConnected ('e').                                      |
-|                |                                                                    |
-| /set/a1        | The letter 'a' indicates that it is setting the network            |
-|                | configuration. The numbers indicates:                              |
-|                | 1 -> 192.168.10.130/26:8080                                        |
-|                | 2 -> 10.0.1.2/24:80                                                |
-|                | 3 -> 10.0.1.129/26:8080                                            |
-|                | 4 -> 192.168.1.2/24:80                                             |
-|                | Other -> 192.168.10.2/24:80                                        |
-|                |                                                                    |
-| /set/nDev_Name | Set the device name. The maximum length is 15 characters. The space|
-|                | character is substituted by '_'.                                   |
-|                |                                                                    |
-| /set/t1        | Set the sampling time of the datalogger. The available options are |
-|                | the following:                                                     |
-|                | 1 -> 5 seconds                                                     |
-|                | 2 -> 10 seconds                                                    |
-|                | 3 -> 1 minute                                                      |
-|                | 4 -> 5 minutes                                                     |
-|                | 5 -> 10 minutes                                                    |
-|                | Other -> 1 second                                                  |
-|                |                                                                    |
+| /set/i0t       | Set the input 0 as temperature type. The 0 can be changed to any   
+                   other input port (0-5) and the 't' to any type (t, p, l, b, r, r). 
+                                                                                      |
+| /set/o2b       | Set the output 2 as logic output. The 2 can be changed to any other 
+                   available output (2-5). The available types are logic ('b') and    
+                   Void/Empty/NoConnected ('e').                                       
+                                                                                      |
+| /set/a1        | The letter 'a' indicates that it is setting the network             
+                   configuration. The numbers indicates:                               
+                   1 -> 192.168.10.130/26:8080                                         
+                   2 -> 10.0.1.2/24:80                                                 
+                   3 -> 10.0.1.129/26:8080                                             
+                   4 -> 192.168.1.2/24:80                                              
+                   Other -> 192.168.10.2/24:80                                         
+                                                                                      |
+| /set/nDev_Name | Set the device name. The maximum length is 15 characters. The space 
+                   character is substituted by '_'.                                    
+                                                                                      |
+| /set/t1        | Set the sampling time of the datalogger. The available options are 
+                   the following:                                                     
+                   1 -> 5 seconds                                                     
+                   2 -> 10 seconds                                                    
+                   3 -> 1 minute                                                      
+                   4 -> 5 minutes                                                     
+                   5 -> 10 minutes                                                    
+                   Other -> 1 second                                                  
+                                                                                      |
 
 
 
