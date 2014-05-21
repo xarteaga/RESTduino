@@ -550,8 +550,8 @@ void setup() {
     pinMode(outTable[i], OUTPUT);
   }
 
-  for (byte an = 0; an<6; an++)
-    if (analogRead(an)>904){
+//  for (byte an = 0; an<6; an++)
+    if (analogRead(0)>500){
       Serial.println("RESET DETECTED!");
       for(byte i = 0; i<sizeof(Configuration);i++)
         EEPROM.write(_EEPROM_BASE + i, 0);
@@ -578,7 +578,7 @@ void setup() {
       for (byte out = 0; out < 6; out ++){
         digitalWrite(outTable[out], LOW);
       }
-      break;
+  //    break;
     }
 
   // Setup ports configuration
